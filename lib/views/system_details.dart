@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:microtek_mobile_app/views/uploading_data.dart';
+import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class SystemDetails extends StatefulWidget {
   final BluetoothDevice? device;
@@ -18,10 +20,37 @@ class _SystemDetailsState extends State<SystemDetails> {
   TextEditingController batterySerialController = TextEditingController();
   String? batterySystem;
 
-  Future<void> _scanQRCode() async {
-    print("Scanning QR code...");
-    // Implement your QR scanning logic here
-  }
+
+
+Future<void> _scanQRCode() async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => AiBarcodeScanner(
+        controller: MobileScannerController(
+          detectionSpeed: DetectionSpeed.noDuplicates,
+        ),
+        onDetect: (BarcodeCapture capture) {
+          if (capture.barcodes.isNotEmpty) {
+            final String? scannedValue = capture.barcodes.first.rawValue;
+
+            if (scannedValue != null) {
+              setState(() {
+                batterySerialController.text = scannedValue; // Update input field
+              });
+            }
+
+            Navigator.pop(context); // Close scanner after scanning
+          }
+        },
+        validator: (BarcodeCapture capture) {
+          return capture.barcodes.isNotEmpty; // Ensure barcode is detected
+        },
+      ),
+    ),
+  );
+}
+
 
   void proceed() async {
     if (_formKey.currentState!.validate()) {
