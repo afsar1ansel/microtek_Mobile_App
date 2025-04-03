@@ -1,0 +1,1 @@
+C:\Users\mchet\OneDrive\Desktop\Projects\flutter_projects\mesha_bluetooth_app\build\app\intermediates\cxx\RelWithDebInfo\205dsw2q\obj\arm64-v8a
