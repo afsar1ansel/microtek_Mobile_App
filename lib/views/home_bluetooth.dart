@@ -1,12 +1,12 @@
 import 'dart:math'; // Import the math library for pi
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mesha_bluetooth_data_retrieval/components/bottom_navbar.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/device_details.dart';
+import 'package:microtek_mobile_app/components/bottom_navbar.dart';
+import 'package:microtek_mobile_app/views/device_details.dart';
 
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/system_details.dart';
+import 'package:microtek_mobile_app/views/system_details.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
@@ -67,7 +67,7 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+        '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
     final cacheFiles = cacheDir.listSync();
 
     setState(() {
@@ -90,7 +90,7 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {

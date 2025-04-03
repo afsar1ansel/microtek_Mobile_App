@@ -6,7 +6,7 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:io';
 import 'package:csv/csv.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/system_details.dart';
+import 'package:microtek_mobile_app/views/system_details.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -47,7 +47,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+        '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
     List<FileSystemEntity> cache_files = [];
     final cacheFiles = cacheDir.listSync();
 
@@ -130,7 +130,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {

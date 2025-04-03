@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/device_details.dart';
+import 'package:microtek_mobile_app/views/device_details.dart';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';

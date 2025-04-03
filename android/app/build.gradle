@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mesha_bluetooth_data_retrieval"
+    namespace = "com.example.microtek_mobile_app"
     compileSdk = flutter.compileSdkVersion.toInteger() // Ensure this is an integer
     ndkVersion = flutter.ndkVersion
     dynamicFeatures = []
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.mesha_bluetooth_data_retrieval"
+        applicationId = "com.example.microtek_mobile_app"
         minSdk = flutter.minSdkVersion.toInteger() // Ensure this is an integer
         targetSdk = flutter.targetSdkVersion.toInteger() // Ensure this is an integer
         versionCode = flutter.versionCode.toInteger() // Ensure this is an integer

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mesha_bluetooth_data_retrieval/components/bottom_navbar.dart';
+import 'package:microtek_mobile_app/components/bottom_navbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -421,12 +421,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 10,
                     color: Color(0xFFEAEAEA),
                   ),
+                  // changed to system details from change password
                   NavigationCard(
                       onTap: () {
                         print("Change Password clicked!");
-                        Navigator.pushNamed(context, '/change_password');
+                        Navigator.pushNamed(context, '/system_details');
                       },
-                      title: 'Change Password',
+                      title: 'system detials',
                       icon: Icons.lock_outline),
                   const Divider(
                     height: 10,

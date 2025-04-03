@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/uploading_data.dart';
-
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:microtek_mobile_app/views/uploading_data.dart';
 
 class SystemDetails extends StatefulWidget {
   final BluetoothDevice? device;
@@ -13,66 +12,27 @@ class SystemDetails extends StatefulWidget {
 
 class _SystemDetailsState extends State<SystemDetails> {
   final _formKey = GlobalKey<FormState>();
-
   final storage = const FlutterSecureStorage();
 
-  TextEditingController customerNameController = TextEditingController();
-  TextEditingController mobileNumberController = TextEditingController();
-  TextEditingController placeController = TextEditingController();
-  TextEditingController batteryBrandController = TextEditingController();
-  TextEditingController batteryCapacityController = TextEditingController();
-  TextEditingController batteryRatingController = TextEditingController();
+  TextEditingController serviceRequestNumber = TextEditingController();
   TextEditingController batterySerialController = TextEditingController();
-  TextEditingController battery1SerialController = TextEditingController();
-  TextEditingController battery2SerialController = TextEditingController();
-
   String? batterySystem;
-  bool is24V = false;
+
+  Future<void> _scanQRCode() async {
+    print("Scanning QR code...");
+    // Implement your QR scanning logic here
+  }
 
   void proceed() async {
     if (_formKey.currentState!.validate()) {
-      Map<String, dynamic> formData = {
-        "Customer Name": customerNameController.text,
-        "Mobile Number": mobileNumberController.text,
-        "Place": placeController.text,
-        "Battery Brand": batteryBrandController.text,
-        "Battery Capacity (Ah)": batteryCapacityController.text,
-        "Battery Rating": batteryRatingController.text,
-        "Battery System": batterySystem,
-        "Battery Serial Number": is24V
-            ? {
-                "Battery 1 Serial Number": battery1SerialController.text,
-                "Battery 2 Serial Number": battery2SerialController.text
-              }
-            : batterySerialController.text
-      };
       final token = await storage.read(key: 'userToken');
-      Map<String, dynamic> data = is24V
-          ? {
-              "token": token,
-              "customer_name": customerNameController.text,
-              "mobile": mobileNumberController.text,
-              "place": placeController.text,
-              "battery_brand": batteryBrandController.text,
-              "battery_capacity": batteryCapacityController.text,
-              "battery_rating": batteryRatingController.text,
-              "battery_system": batterySystem,
-              "batter_serial_no_1": battery1SerialController.text,
-              "batter_serial_no_2": battery2SerialController.text
-            }
-          : {
-              "token": token,
-              "customer_name": customerNameController.text,
-              "mobile": mobileNumberController.text,
-              "place": placeController.text,
-              "battery_brand": batteryBrandController.text,
-              "battery_capacity": batteryCapacityController.text,
-              "battery_rating": batteryRatingController.text,
-              "battery_system": batterySystem,
-              "batter_serial_no_1": batterySerialController.text
-            };
+      Map<String, dynamic> data = {
+        "token": token,
+        "service_request_number": serviceRequestNumber.text,
+        "battery_system": batterySystem,
+        "battery_serial": batterySerialController.text,
+      };
 
-      print(formData);
       print(data);
 
       if (mounted) {
@@ -90,7 +50,7 @@ class _SystemDetailsState extends State<SystemDetails> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text("System Details"),
+        title: const Text("System Details"),
         centerTitle: true,
       ),
       body: Form(
@@ -100,25 +60,12 @@ class _SystemDetailsState extends State<SystemDetails> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                buildTextField("Customer Name*", customerNameController,
+                // Service Request Number
+                buildTextField("Service Request Number*", serviceRequestNumber,
                     required: true, validationType: "letters"),
-                SizedBox(height: 16),
-                buildTextField("Mobile Number*", mobileNumberController,
-                    required: true, validationType: "mobile"),
-                SizedBox(height: 16),
-                buildTextField("Place*", placeController,
-                    required: true, validationType: "letters"),
-                SizedBox(height: 16),
-                buildTextField("Battery Brand", batteryBrandController,
-                    validationType: "letters"),
-                SizedBox(height: 16),
-                buildTextField(
-                    "Battery Capacity (Ah)*", batteryCapacityController,
-                    required: true, validationType: "alphanumeric"),
-                SizedBox(height: 16),
-                buildTextField("Battery Rating*", batteryRatingController,
-                    required: true, validationType: "alphanumeric"),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
+
+                // Battery System Dropdown
                 DropdownButtonFormField<String>(
                   value: batterySystem,
                   decoration: InputDecoration(
@@ -142,31 +89,21 @@ class _SystemDetailsState extends State<SystemDetails> {
                   onChanged: (value) {
                     setState(() {
                       batterySystem = value;
-                      is24V = value == "24V";
                     });
                   },
                   validator: (value) =>
                       value == null ? "Please select a battery system" : null,
                 ),
-                if (!is24V) ...[
-                  SizedBox(height: 16),
-                  buildTextField(
-                    "Battery Serial Number*", batterySerialController,
-                    // required: true
-                  ),
-                ],
-                if (is24V) ...[
-                  SizedBox(height: 16),
-                  buildTextField(
-                    "Battery 1 - Serial Number*", battery1SerialController,
-                    // required: true
-                  ),
-                  SizedBox(height: 16),
-                  buildTextField(
-                    "Battery 2 - Serial Number*", battery2SerialController,
-                    // required: true
-                  ),
-                ],
+                const SizedBox(height: 16),
+
+                // Battery Serial Number with QR Icon inside the TextField
+                buildTextField(
+                  "Battery Serial Number*",
+                  batterySerialController,
+                  required: true,
+                  hasQrIcon: true,
+                  onQrPressed: _scanQRCode,
+                ),
               ],
             ),
           ),
@@ -184,7 +121,7 @@ class _SystemDetailsState extends State<SystemDetails> {
                 borderRadius: BorderRadius.circular(10.0),
               ),
             ),
-            child: Text(
+            child: const Text(
               "Proceed",
               style: TextStyle(
                 color: Colors.white,
@@ -198,10 +135,15 @@ class _SystemDetailsState extends State<SystemDetails> {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller,
-      {bool required = false,
-      String validationType = "none",
-      TextInputType keyboardType = TextInputType.text}) {
+  Widget buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool required = false,
+    String validationType = "none",
+    TextInputType keyboardType = TextInputType.text,
+    bool hasQrIcon = false,
+    VoidCallback? onQrPressed,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -219,6 +161,13 @@ class _SystemDetailsState extends State<SystemDetails> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade400),
         ),
+        suffixIcon: hasQrIcon
+            ? IconButton(
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: onQrPressed,
+                tooltip: 'Scan QR Code',
+              )
+            : null,
       ),
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {

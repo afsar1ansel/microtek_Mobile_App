@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/change_password.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/home_bluetooth.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/login.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/my_profile.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/profile.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/reports.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/splash_screen.dart';
+import 'package:microtek_mobile_app/views/change_password.dart';
+import 'package:microtek_mobile_app/views/home_bluetooth.dart';
+import 'package:microtek_mobile_app/views/login.dart';
+import 'package:microtek_mobile_app/views/my_profile.dart';
+import 'package:microtek_mobile_app/views/profile.dart';
+import 'package:microtek_mobile_app/views/reports.dart';
+import 'package:microtek_mobile_app/views/splash_screen.dart';
+import 'package:microtek_mobile_app/views/system_details.dart';
 
 // import 'dart:async';
 // import 'dart:convert';
@@ -61,7 +62,8 @@ class MyApp extends StatelessWidget {
         '/reports': (context) => const ReportsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/my_profile': (context) => MyProfile(),
-        '/change_password': (context) => const ChangePasswordPage(),
+        // '/change_password': (context) => const ChangePasswordPage(),
+        '/system_details': (context) => const SystemDetails(),
         // '/test': (context) => const HomeScreen(),
       },
     );

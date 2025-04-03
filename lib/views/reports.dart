@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mesha_bluetooth_data_retrieval/components/bottom_navbar.dart';
+import 'package:microtek_mobile_app/components/bottom_navbar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mesha_bluetooth_data_retrieval/views/system_details.dart';
+import 'package:microtek_mobile_app/views/system_details.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -40,7 +40,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+        '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
     final cacheFiles = cacheDir.listSync();
 
     setState(() {
@@ -62,7 +62,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.mesha_bluetooth_data_retrieval/cache');
+              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {
