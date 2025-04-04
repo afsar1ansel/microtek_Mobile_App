@@ -14,6 +14,10 @@ class _MyProfileState extends State<MyProfile> {
   // Controllers for text fields
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController userIdController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+  final TextEditingController branchController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   final storage = const FlutterSecureStorage();
@@ -36,17 +40,19 @@ class _MyProfileState extends State<MyProfile> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          nameController.text = data['username'];
-          emailController.text = data['email'];
+          nameController.text = data['username'] ?? '';
+          emailController.text = data['email'] ?? '';
+          userIdController.text = data['userId'] ?? '';
+          mobileController.text = data['mobile'] ?? '';
+          branchController.text = data['branch'] ?? '';
+          cityController.text = data['city'] ?? '';
         });
       } else {
-        // Handle error
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to fetch user data")),
         );
       }
     } catch (e) {
-      // Handle error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -58,23 +64,24 @@ class _MyProfileState extends State<MyProfile> {
     if (_formKey.currentState!.validate()) {
       try {
         final token = await storage.read(key: 'userToken');
-        String updatedName = nameController.text.trim();
-        String updatedEmail = emailController.text.trim();
-        Map<String, dynamic> data = {};
-        data['token'] = token;
-        data['username'] = updatedName;
-        data['email'] = updatedEmail;
+        Map<String, dynamic> data = {
+          'token': token,
+          'username': nameController.text.trim(),
+          'email': emailController.text.trim(),
+          'userId': userIdController.text.trim(),
+          'mobile': mobileController.text.trim(),
+          'branch': branchController.text.trim(),
+          'city': cityController.text.trim(),
+        };
 
         final response = await http.post(
           Uri.parse(
               'https://bt.meshaenergy.com/apis/app/update-email-username'),
           body: data,
         );
+
         print(response.body);
         if (response.statusCode == 200) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   const SnackBar(content: Text("Profile updated successfully!")),
-          // );
           final responseData = jsonDecode(response.body);
           if (responseData['errFlag'] == 0) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -86,13 +93,11 @@ class _MyProfileState extends State<MyProfile> {
             );
           }
         } else {
-          // Handle error
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Failed to update profile")),
           );
         }
       } catch (e) {
-        // Handle error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: $e")),
         );
@@ -104,7 +109,7 @@ class _MyProfileState extends State<MyProfile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true, // Center the title horizontally
+        centerTitle: true,
         title: const Text(
           "My Profile",
           style: TextStyle(
@@ -113,17 +118,17 @@ class _MyProfileState extends State<MyProfile> {
           ),
         ),
       ),
-      resizeToAvoidBottomInset: true, // Allows resizing when the keyboard opens
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Form(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Name Field
                       TextFormField(
@@ -138,6 +143,22 @@ class _MyProfileState extends State<MyProfile> {
                           } else if (!RegExp(r'^[a-zA-Z\s]+$')
                               .hasMatch(value)) {
                             return 'Name should contain only letters and spaces';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // User ID Field
+                      TextFormField(
+                        controller: userIdController,
+                        decoration: const InputDecoration(
+                          labelText: "User ID",
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'User ID cannot be empty';
                           }
                           return null;
                         },
@@ -164,33 +185,107 @@ class _MyProfileState extends State<MyProfile> {
                         },
                       ),
                       const SizedBox(height: 16),
+
+                      // Mobile Number Field
+                      TextFormField(
+                        controller: mobileController,
+                        decoration: const InputDecoration(
+                          labelText: "Mobile Number",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Mobile number cannot be empty';
+                          } else if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+                            return 'Please enter a valid 10-digit mobile number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Branch Field
+                      TextFormField(
+                        controller: branchController,
+                        decoration: const InputDecoration(
+                          labelText: "Branch",
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Branch cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // City Field
+                      TextFormField(
+                        controller: cityController,
+                        decoration: const InputDecoration(
+                          labelText: "City",
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'City cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: TextButton(
-          onPressed: updateProfile,
-          style: TextButton.styleFrom(
-            backgroundColor: const Color(0xFF1D4694),
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
+
+                // Logo and Version
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Column(
+                children: [
+                  Image.asset(
+                    'assets/logo_grey.png',
+                    width: 120,
+                  ),
+                  const Text(
+                    'Version 1.0.14b269',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF848B9F),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          child: const Text(
-            "Update Profile",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
+
+            // Update Button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+              child: TextButton(
+                onPressed: updateProfile,
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF1D4694),
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+                child: const Text(
+                  "Update Profile",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

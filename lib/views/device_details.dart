@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:math';
-
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:io';
@@ -194,7 +193,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                     SnackBar(
                       content: Text(
                           'No Records Found. Please wait for 1 minute before Retirving Data...'),
-                      backgroundColor: Color(0xFF204433),
+                      backgroundColor: Color(0xFF203344),
                       showCloseIcon: true,
                       behavior:
                           SnackBarBehavior.floating, // Make it float on top
@@ -289,7 +288,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Data Retrieved Successfully.'),
-        backgroundColor: Color(0xFF204433),
+        backgroundColor: Color(0xFF203344),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating, // Make it float on top
       ),
@@ -371,7 +370,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         SnackBar(
           content: Text(
               'Data Deleted Successfully. Please wait for 1 minute before Retirving Data...'),
-          backgroundColor: Color(0xFF204433),
+          backgroundColor: Color(0xFF203344),
           showCloseIcon: true,
           behavior: SnackBarBehavior.floating, // Make it float on top
         ),

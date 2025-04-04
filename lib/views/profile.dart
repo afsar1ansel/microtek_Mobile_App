@@ -421,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 10,
                     color: Color(0xFFEAEAEA),
                   ),
-                  // changed to system details from change password
+                  //changed to system details from change password
                   NavigationCard(
                       onTap: () {
                         print("Change Password clicked!");
@@ -466,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: 120,
                 ),
                 Text(
-                  'Version 1.0.0',
+                  'Version 1.0.14b269',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,

@@ -41,7 +41,7 @@ class _DownloadingReportState extends State<DownloadingReport> {
           message,
           style: const TextStyle(fontSize: 16),
         ),
-        backgroundColor: Color(0xFF204433),
+        backgroundColor: Color(0xFF203344),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating, // Make it float on top
       ),
@@ -212,7 +212,7 @@ class _DownloadingReportState extends State<DownloadingReport> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
-              color: const Color(0xFF204433),
+              color: const Color(0xFF203344),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(

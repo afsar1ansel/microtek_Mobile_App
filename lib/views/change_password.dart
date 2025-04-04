@@ -34,7 +34,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           message,
           style: const TextStyle(fontSize: 16),
         ),
-        backgroundColor: Color(0xFF204433),
+        backgroundColor: Color(0xFF203344),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating, // Make it float on top
       ),

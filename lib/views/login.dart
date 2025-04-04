@@ -42,7 +42,7 @@ class LogInContent extends StatelessWidget {
             bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
           ),
           child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(), // Prevent overscrolling
+            physics: const ClampingScrollPhysics(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -71,61 +71,94 @@ class LogInContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Stack for image and logo
-        Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: Container(
-                height: 360,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/login_page_img.png'),
-                    fit: BoxFit.cover,
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Stack for image and logo
+                Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 0),
+                      child: Container(
+                        height: 360,
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/login_page_img.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 20,
+                      child: Image.asset(
+                        'assets/logo0.png',
+                        height: 69,
+                        width: 120,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Microtek Energy\ntracker',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Your data, just a tap away!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              top: 20,
-              left: 20,
-              child: Image.asset(
-                'assets/logo0.png',
-                height: 69,
-                width: 120,
-              ),
-            ),
-          ],
-        ),
 
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Microtek Energy\ntracker',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                SizedBox(height: 60),
+                Column(
+                  children: [
+                    Image.asset(
+                      'assets/Mesha_inc_logo.png',
+                      width: 200,
+                    ),
+                    const Text(
+                      'Powered by Mesha Energy Solutions Pvt Ltd',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Figtree',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 20 / 12,
+                        letterSpacing: 0.0,
+                        color: Color(0xFF323836),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Your data, just a tap away!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            ],
+
+                const Divider(
+                  thickness: 0.5,
+                  color: Color(0xFFEAEAEA),
+                ),
+              ],
+            ),
           ),
         ),
 
-        const Expanded(child: SizedBox()),
-
+        // This will stick to the bottom
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
           child: Column(
             children: [
               const Text(
@@ -181,7 +214,7 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
-  String? _errorMessage; // Holds API error messages
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -227,7 +260,7 @@ class _LoginFormState extends State<LoginForm> {
   Future<void> _handleSubmit() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null; // Clear previous error
+      _errorMessage = null;
     });
 
     try {
@@ -303,14 +336,13 @@ class _LoginFormState extends State<LoginForm> {
             validator: _validateEmail,
             keyboardType: TextInputType.emailAddress,
           ),
-          // Text message below the username field
           const SizedBox(height: 8),
           const Text(
             "Please use your Microtek Care User ID & Password to Sign in",
             style: TextStyle(
-              fontStyle: FontStyle.italic, // Italic text
+              fontStyle: FontStyle.italic,
               fontSize: 14,
-              color: Colors.grey, // Light grey color for subtle emphasis
+              color: Colors.grey,
             ),
           ),
           const SizedBox(height: 16),
@@ -350,7 +382,7 @@ class _LoginFormState extends State<LoginForm> {
               return null;
             },
           ),
-          if (_errorMessage != null) // Show error below password field
+          if (_errorMessage != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
@@ -362,9 +394,7 @@ class _LoginFormState extends State<LoginForm> {
           SizedBox(
             width: double.infinity,
             child: TextButton(
-              onPressed: _isLoading
-                  ? null
-                  : _handleSubmit, // Disable button when loading
+              onPressed: _isLoading ? null : _handleSubmit,
               style: TextButton.styleFrom(
                 backgroundColor:
                     _isLoading ? Colors.grey : const Color(0xFF1D4694),

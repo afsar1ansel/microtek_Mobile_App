@@ -8,6 +8,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 class SystemDetails extends StatefulWidget {
   final BluetoothDevice? device;
   const SystemDetails({super.key, this.device});
+
   @override
   State<SystemDetails> createState() => _SystemDetailsState();
 }
@@ -15,63 +16,78 @@ class SystemDetails extends StatefulWidget {
 class _SystemDetailsState extends State<SystemDetails> {
   final _formKey = GlobalKey<FormState>();
   final storage = const FlutterSecureStorage();
-
-  TextEditingController serviceRequestNumber = TextEditingController();
-  TextEditingController batterySerialController = TextEditingController();
+  final TextEditingController serviceRequestNumber = TextEditingController();
+  final TextEditingController batterySerialController = TextEditingController();
   String? batterySystem;
+  bool _isScanning = false;
 
+  Future<void> _scanQRCode() async {
+    if (_isScanning) return;
+    _isScanning = true;
 
-
-Future<void> _scanQRCode() async {
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => AiBarcodeScanner(
-        controller: MobileScannerController(
-          detectionSpeed: DetectionSpeed.noDuplicates,
+    try {
+      final scannedValue = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const _QRScannerScreen(),
         ),
-        onDetect: (BarcodeCapture capture) {
-          if (capture.barcodes.isNotEmpty) {
-            final String? scannedValue = capture.barcodes.first.rawValue;
+      );
 
-            if (scannedValue != null) {
-              setState(() {
-                batterySerialController.text = scannedValue; // Update input field
-              });
-            }
-
-            Navigator.pop(context); // Close scanner after scanning
-          }
-        },
-        validator: (BarcodeCapture capture) {
-          return capture.barcodes.isNotEmpty; // Ensure barcode is detected
-        },
-      ),
-    ),
-  );
-}
-
+      if (scannedValue != null && mounted) {
+        setState(() {
+          batterySerialController.text = scannedValue;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('QR Scan Error: ${e.toString()}')),
+        );
+      }
+    } finally {
+      _isScanning = false;
+    }
+  }
 
   void proceed() async {
     if (_formKey.currentState!.validate()) {
-      final token = await storage.read(key: 'userToken');
-      Map<String, dynamic> data = {
-        "token": token,
-        "service_request_number": serviceRequestNumber.text,
-        "battery_system": batterySystem,
-        "battery_serial": batterySerialController.text,
-      };
+      try {
+        final token = await storage.read(key: 'userToken');
+        if (token == null) {
+          throw Exception('User token not found');
+        }
 
-      print(data);
+        Map<String, dynamic> data = {
+          "token": token,
+          "service_request_number": serviceRequestNumber.text,
+          "battery_system": batterySystem,
+          "battery_serial": batterySerialController.text,
+        };
 
-      if (mounted) {
-        Navigator.pushReplacement(
+        if (mounted) {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    UploadingData(data: data, device: widget.device)));
+              builder: (context) =>
+                  UploadingData(data: data, device: widget.device),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    serviceRequestNumber.dispose();
+    batterySerialController.dispose();
+    super.dispose();
   }
 
   @override
@@ -89,43 +105,15 @@ Future<void> _scanQRCode() async {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Service Request Number
-                buildTextField("Service Request Number*", serviceRequestNumber,
-                    required: true, validationType: "letters"),
-                const SizedBox(height: 16),
-
-                // Battery System Dropdown
-                DropdownButtonFormField<String>(
-                  value: batterySystem,
-                  decoration: InputDecoration(
-                    labelText: "Battery System*",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
-                    ),
-                  ),
-                  items: ["12V", "24V"]
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      batterySystem = value;
-                    });
-                  },
-                  validator: (value) =>
-                      value == null ? "Please select a battery system" : null,
+                buildTextField(
+                  "Service Request Number*",
+                  serviceRequestNumber,
+                  required: true,
+                  validationType: "letters",
                 ),
                 const SizedBox(height: 16),
-
-                // Battery Serial Number with QR Icon inside the TextField
+                _buildBatterySystemDropdown(),
+                const SizedBox(height: 16),
                 buildTextField(
                   "Battery Serial Number*",
                   batterySerialController,
@@ -138,25 +126,56 @@ Future<void> _scanQRCode() async {
           ),
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        child: SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: proceed,
-            style: TextButton.styleFrom(
-              backgroundColor: const Color(0xFF1D4694),
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
+      bottomNavigationBar: _buildProceedButton(),
+    );
+  }
+
+  Widget _buildBatterySystemDropdown() {
+    return DropdownButtonFormField<String>(
+      value: batterySystem,
+      decoration: InputDecoration(
+        labelText: "Battery System*",
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade400),
+        ),
+      ),
+      items: ["12V", "24V"]
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
+      onChanged: (value) => setState(() => batterySystem = value),
+      validator: (value) =>
+          value == null ? "Please select a battery system" : null,
+    );
+  }
+
+  Widget _buildProceedButton() {
+    return BottomAppBar(
+      child: SizedBox(
+        width: double.infinity,
+        child: TextButton(
+          onPressed: proceed,
+          style: TextButton.styleFrom(
+            backgroundColor: const Color(0xFF1D4694),
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
             ),
-            child: const Text(
-              "Proceed",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          child: const Text(
+            "Proceed",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -227,5 +246,93 @@ Future<void> _scanQRCode() async {
         return null;
       },
     );
+  }
+}
+
+class _QRScannerScreen extends StatefulWidget {
+  const _QRScannerScreen();
+
+  @override
+  State<_QRScannerScreen> createState() => _QRScannerScreenState();
+}
+
+class _QRScannerScreenState extends State<_QRScannerScreen> {
+  late MobileScannerController _controller;
+  bool _isProcessing = false;
+  bool _hasScanned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      returnImage: false,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        return !_isProcessing; // Block back navigation during processing
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Scan QR Code'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (!_isProcessing) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ),
+        body: Stack(
+          children: [
+            AiBarcodeScanner(
+              controller: _controller,
+              onDetect: _handleBarcode,
+              validator: (capture) => capture.barcodes.isNotEmpty,
+            ),
+            if (_isProcessing)
+              const Center(
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleBarcode(BarcodeCapture capture) async {
+    if (_isProcessing || _hasScanned) return;
+    _isProcessing = true;
+
+    try {
+      final barcodes = capture.barcodes;
+      if (barcodes.isNotEmpty && mounted) {
+        final barcode = barcodes.first;
+        if (barcode.rawValue != null) {
+          _hasScanned = true;
+          Navigator.pop(context, barcode.rawValue);
+        }
+      }
+    } catch (e) {
+      debugPrint('Barcode processing error: $e');
+      if (mounted && !_hasScanned) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error processing QR code')),
+        );
+      }
+    } finally {
+      _isProcessing = false;
+    }
   }
 }

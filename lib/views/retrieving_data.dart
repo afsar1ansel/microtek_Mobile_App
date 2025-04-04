@@ -187,7 +187,7 @@ class _RetrievingDataState extends State<RetrievingData> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
-              color: const Color(0xFF204433),
+              color: const Color(0xFF203344),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
