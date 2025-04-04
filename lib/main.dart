@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/my_profile': (context) => MyProfile(),
         // '/change_password': (context) => const ChangePasswordPage(),
-        '/system_details': (context) => const SystemDetails(),
+        // '/system_details': (context) => const SystemDetails(),
         // '/test': (context) => const HomeScreen(),
       },
     );

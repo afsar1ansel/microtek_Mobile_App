@@ -422,17 +422,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Color(0xFFEAEAEA),
                   ),
                   //changed to system details from change password
-                  NavigationCard(
-                      onTap: () {
-                        print("Change Password clicked!");
-                        Navigator.pushNamed(context, '/system_details');
-                      },
-                      title: 'system detials',
-                      icon: Icons.lock_outline),
-                  const Divider(
-                    height: 10,
-                    color: Color(0xFFEAEAEA),
-                  ),
+                  // NavigationCard(
+                  //     onTap: () {
+                  //       print("Change Password clicked!");
+                  //       Navigator.pushNamed(context, '/system_details');
+                  //     },
+                  //     title: 'system detials',
+                  //     icon: Icons.lock_outline),
+                  // const Divider(
+                  //   height: 10,
+                  //   color: Color(0xFFEAEAEA),
+                  // ),
                   NavigationCard(
                       onTap: () {
                         print("Support clicked!");
