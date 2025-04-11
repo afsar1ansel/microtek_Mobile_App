@@ -165,7 +165,7 @@ class _GenertingReportState extends State<GenertingReport> {
       };
       print('data to generate pdf: $data');
       final response = await http.post(
-          Uri.parse('https://bt.meshaenergy.com/apis/app/get-pdf-report'),
+          Uri.parse('https://met.microtek.in/app/get-pdf-report'),
           body: data);
       print(response.body);
       if (response.statusCode == 200) {

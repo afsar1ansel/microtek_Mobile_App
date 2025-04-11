@@ -147,7 +147,7 @@ class _UploadingDataState extends State<UploadingData> {
     try {
       isFetching = false;
       final response = await http.post(
-          Uri.parse('https://bt.meshaenergy.com/apis/app/add-user-info'),
+          Uri.parse('https://met.microtek.in/app/add-user-info'),
           body: widget.data);
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -192,8 +192,7 @@ class _UploadingDataState extends State<UploadingData> {
       // Create a multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://bt.meshaenergy.com/apis/app/scan-file-upload-records'),
+        Uri.parse('https://met.microtek.in/app/scan-file-upload-records'),
       );
 
       // Add fields

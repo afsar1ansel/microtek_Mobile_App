@@ -813,7 +813,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.cloud_done_rounded,
-                                  color: Colors.blue),
+                                  color: Colors.green),
                               onPressed: () {},
                             ),
                             PopupMenuButton<String>(

@@ -1120,7 +1120,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       await storage.write(key: "pageIndex", value: "0");
 
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => SystemDetails(device: widget.device),

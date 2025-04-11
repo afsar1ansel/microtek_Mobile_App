@@ -67,7 +67,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
       // Send POST request to the API
       final response = await http.post(
-        Uri.parse('https://bt.meshaenergy.com/apis/app-users/change-password'),
+        Uri.parse('https://met.microtek.in/app-users/change-password'),
         body: data,
       );
       print(
@@ -221,7 +221,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: resetPassword,
-         style: ElevatedButton.styleFrom(
+          style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1D4694), // Same background color
             padding: const EdgeInsets.symmetric(
                 vertical: 16.0), // Same vertical padding
@@ -229,7 +229,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               borderRadius: BorderRadius.circular(10.0), // Same border radius
             ),
           ),
-         child: const Text(
+          child: const Text(
             "Reset Password",
             style: TextStyle(
               color: Colors.white,

@@ -33,8 +33,7 @@ class _MyProfileState extends State<MyProfile> {
     try {
       final token = await storage.read(key: 'userToken');
       final response = await http.get(
-        Uri.parse(
-            'https://bt.meshaenergy.com/apis/app-users/profile/details/$token'),
+        Uri.parse('https://met.microtek.in/app-users/profile/details/$token'),
       );
 
       if (response.statusCode == 200) {
@@ -75,8 +74,7 @@ class _MyProfileState extends State<MyProfile> {
         };
 
         final response = await http.post(
-          Uri.parse(
-              'https://bt.meshaenergy.com/apis/app/update-email-username'),
+          Uri.parse('https://met.microtek.in/app/update-email-username'),
           body: data,
         );
 
@@ -241,7 +239,7 @@ class _MyProfileState extends State<MyProfile> {
               ),
             ),
 
-                // Logo and Version
+            // Logo and Version
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Column(

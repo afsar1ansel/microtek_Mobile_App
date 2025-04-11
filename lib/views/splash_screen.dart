@@ -24,9 +24,11 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnimation;
   late AnimationController _fadeController;
 
+
   @override
   void initState() {
     super.initState();
+    // _printAllSecureStorageData(); // 👈 Print everything
 
     // Animation for scaling the first two frames
     _scaleController = AnimationController(
@@ -76,6 +78,14 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
+  Future<void> _printAllSecureStorageData() async {
+    final allData = await storage.readAll();
+    debugPrint('📦 All stored secure data:');
+    allData.forEach((key, value) {
+      debugPrint('$key: $value');
+    });
+  }
+
   Future<void> _verifyAuthToken() async {
     try {
       final token = await storage.read(key: 'userToken');
@@ -83,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (token != null) {
         final response = await http.post(
-          Uri.parse('https://bt.meshaenergy.com/apis/app-users/validate-token'),
+          Uri.parse('https://met.microtek.in/app-users/validate-token'),
           body: {'token': token},
         );
 

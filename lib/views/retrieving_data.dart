@@ -63,8 +63,7 @@ class _RetrievingDataState extends State<RetrievingData> {
       // Create a multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://bt.meshaenergy.com/apis/app/scan-file-upload-records'),
+        Uri.parse('https://met.microtek.in/app/scan-file-upload-records'),
       );
 
       // Add fields

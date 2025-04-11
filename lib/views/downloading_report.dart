@@ -69,7 +69,7 @@ class _DownloadingReportState extends State<DownloadingReport> {
   }
 
   Future<void> downloadAndOpenPDF(String fileName) async {
-    final String url = "https://bt.meshaenergy.com/apis/pdf-report/$fileName";
+    final String url = "https://met.microtek.in/pdf-report/$fileName";
 
     try {
       isFetching = false;

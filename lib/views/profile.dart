@@ -32,8 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchProfileData(String token) async {
     try {
       final response = await http.get(
-        Uri.parse(
-            'https://bt.meshaenergy.com/apis/app-users/profile/details/$token'),
+        Uri.parse('https://met.microtek.in/app-users/profile/details/$token'),
       );
 
       if (response.statusCode == 200) {
@@ -57,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://bt.meshaenergy.com/apis/app/reports/total-scan-by-app-user/$token'),
+            'https://met.microtek.in/app/reports/total-scan-by-app-user/$token'),
       );
 
       if (response.statusCode == 200) {
@@ -421,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 10,
                     color: Color(0xFFEAEAEA),
                   ),
-                  //changed to system details from change password
+                  // changed to system details from change password
                   // NavigationCard(
                   //     onTap: () {
                   //       print("Change Password clicked!");
@@ -433,6 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   //   height: 10,
                   //   color: Color(0xFFEAEAEA),
                   // ),
+                  // changed to system details from change password
                   NavigationCard(
                       onTap: () {
                         print("Support clicked!");
