@@ -26,7 +26,8 @@ class _SystemDetailsState extends State<SystemDetails> {
   bool _isValidating = false;
   bool _isValidJob = false;
   String? _validationMessage;
-  int? _userId;
+  String? _userId;
+  bool _isLoadingUserId = true;
   Timer? _debounceTimer;
   final Duration _debounceDelay = const Duration(milliseconds: 2000);
 
@@ -45,8 +46,63 @@ class _SystemDetailsState extends State<SystemDetails> {
   }
 
   Future<void> _loadUserId() async {
-    _userId = 46037; // Hardcoded for testing, replace with storage.read
+    _userId = await storage.read(key: 'user_id');
   }
+
+//   Future<void> _loadUserId() async {
+//   try {
+//     setState(() {
+//       _isLoadingUserId = true;
+//       _userId = null; // Clear previous value while loading
+//     });
+
+//     final token = await storage.read(key: 'userToken');
+//     if (token == null) {
+//       throw Exception('User token not found');
+//     }
+
+//     final response = await http.get(
+//       Uri.parse('https://met.microtek.in/app-users/profile/details/$token'),
+//     ).timeout(const Duration(seconds: 10));
+
+//     if (!mounted) return;
+
+//     if (response.statusCode == 200) {
+//       final data = json.decode(response.body);
+//       final userIdStr = data['user_id']?.toString();
+
+//       if (userIdStr == null || userIdStr.isEmpty) {
+//         throw Exception('User ID not found in response');
+//       }
+
+//       setState(() {
+//         _userId = int.tryParse(userIdStr);
+//         _isLoadingUserId = false;
+//       });
+
+//       if (_userId == null) {
+//         throw Exception('Invalid user ID format: $userIdStr');
+//       }
+//     } else {
+//       throw Exception('API request failed with status ${response.statusCode}');
+//     }
+//   } catch (e) {
+//     if (mounted) {
+//       setState(() {
+//         _isLoadingUserId = false;
+//       });
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Failed to load user ID: ${e.toString()}'),
+//           action: SnackBarAction(
+//             label: 'Retry',
+//             onPressed: _loadUserId,
+//           ),
+//         ),
+//       );
+//     }
+//   }
+// }
 
   bool _areAllFieldsFilled() {
     return serviceRequestNumber.text.isNotEmpty &&
@@ -102,7 +158,7 @@ class _SystemDetailsState extends State<SystemDetails> {
     }
   }
 
-Future<void> _validateJobDetails() async {
+  Future<void> _validateJobDetails() async {
     if (!_areAllFieldsFilled()) {
       setState(() {
         _isValidJob = false;
@@ -206,7 +262,7 @@ Future<void> _validateJobDetails() async {
 
         Map<String, dynamic> data = {
           "token": token,
-          "service_request_number": serviceRequestNumber.text,
+          "customer_name": serviceRequestNumber.text,
           "battery_system": batterySystem,
           "batter_serial_no_1": batterySerialController.text,
         };
@@ -223,15 +279,16 @@ Future<void> _validateJobDetails() async {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}'),
-          ),
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+            ),
           );
         }
       }
     }
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -306,7 +363,9 @@ Future<void> _validateJobDetails() async {
           borderSide: BorderSide(color: Colors.grey.shade400),
         ),
       ),
-      items: ["12V"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items: ["12V"]
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
       onChanged: (value) {
         setState(() => batterySystem = value);
         _onTextChanged();

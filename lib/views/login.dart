@@ -223,39 +223,39 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email cannot be empty';
-    }
-    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        .hasMatch(value)) {
-      return 'Please enter a valid email address';
-    }
-    return null;
-  }
+  // String? _validateEmail(String? value) {
+  //   if (value == null || value.isEmpty) {
+  //     return 'Email cannot be empty';
+  //   }
+  //   if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+  //       .hasMatch(value)) {
+  //     return 'Please enter a valid email address';
+  //   }
+  //   return null;
+  // }
 
-  List<String> _validatePassword(String? value) {
-    List<String> errors = [];
-    if (value == null || value.isEmpty) {
-      errors.add('Password cannot be empty');
-    }
-    if (value != null && value.length < 8) {
-      errors.add('Password must be at least 8 characters long');
-    }
-    if (value != null && !RegExp(r'[A-Z]').hasMatch(value)) {
-      errors.add('Password must include at least one uppercase letter');
-    }
-    if (value != null && !RegExp(r'[a-z]').hasMatch(value)) {
-      errors.add('Password must include at least one lowercase letter');
-    }
-    if (value != null && !RegExp(r'[0-9]').hasMatch(value)) {
-      errors.add('Password must include at least one number');
-    }
-    if (value != null && !RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) {
-      errors.add('Password must include at least one special character');
-    }
-    return errors;
-  }
+  // List<String> _validatePassword(String? value) {
+  //   List<String> errors = [];
+  //   if (value == null || value.isEmpty) {
+  //     errors.add('Password cannot be empty');
+  //   }
+  //   if (value != null && value.length < 8) {
+  //     errors.add('Password must be at least 8 characters long');
+  //   }
+  //   if (value != null && !RegExp(r'[A-Z]').hasMatch(value)) {
+  //     errors.add('Password must include at least one uppercase letter');
+  //   }
+  //   if (value != null && !RegExp(r'[a-z]').hasMatch(value)) {
+  //     errors.add('Password must include at least one lowercase letter');
+  //   }
+  //   if (value != null && !RegExp(r'[0-9]').hasMatch(value)) {
+  //     errors.add('Password must include at least one number');
+  //   }
+  //   if (value != null && !RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) {
+  //     errors.add('Password must include at least one special character');
+  //   }
+  //   return errors;
+  // }
 
   Future<void> _handleSubmit() async {
     setState(() {
@@ -269,6 +269,8 @@ class _LoginFormState extends State<LoginForm> {
         map['email'] = _usernameController.text.trim();
         map['password'] = _passwordController.text.trim();
 
+        await storage.write(key: 'user_id', value: map['email']);
+
         final response = await http.post(
           Uri.parse('https://met.microtek.in/app-users/validate-user'),
           body: map,
@@ -277,9 +279,16 @@ class _LoginFormState extends State<LoginForm> {
         if (response.statusCode == 200) {
           final responseData = jsonDecode(response.body);
           if (responseData['errFlag'] == 0) {
+            print('Login successful!');
+            print(responseData);
             await storage.write(key: 'userToken', value: responseData['token']);
             await storage.write(
                 key: 'username', value: responseData['username']);
+
+                print('User token: ${responseData['token']}');
+            print('User ID: ${responseData['username']}');
+            
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
             Navigator.of(context).pushNamedAndRemoveUntil(
                 '/home', (Route<dynamic> route) => false);
           } else {
@@ -320,7 +329,7 @@ class _LoginFormState extends State<LoginForm> {
           TextFormField(
             controller: _usernameController,
             decoration: InputDecoration(
-              labelText: 'Enter your username',
+              labelText: 'Enter your User ID',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -333,7 +342,7 @@ class _LoginFormState extends State<LoginForm> {
                 borderSide: BorderSide(color: Colors.grey.shade400),
               ),
             ),
-            validator: _validateEmail,
+            // validator: _validateEmail,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 8),
@@ -346,7 +355,7 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
           const SizedBox(height: 16),
-          TextFormField(
+      TextFormField(
             controller: _passwordController,
             decoration: InputDecoration(
               labelText: 'Enter your password',
@@ -375,9 +384,8 @@ class _LoginFormState extends State<LoginForm> {
             ),
             obscureText: !_isPasswordVisible,
             validator: (value) {
-              List<String> errors = _validatePassword(value);
-              if (errors.isNotEmpty) {
-                return errors.join('\n');
+              if (value == null || value.isEmpty) {
+                return 'Password cannot be empty';
               }
               return null;
             },

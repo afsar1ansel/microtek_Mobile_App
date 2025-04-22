@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFF848B9F)),
                         ),
                         onTap: () {
-                          launchUrl(Uri.parse('tel:+91 9019089955'));
+                          launchUrl(Uri.parse('tel:+91 84475 65934'));
                         },
                       ),
                       const Divider(height: 0),
@@ -132,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () {
                           launchUrl(Uri(
                             scheme: 'mailto',
-                            path: 'support@meshatech.com',
+                            path: 'bhawna.arya@microtek.in',
                             query:
                                 'subject=Support Request&body=Please help me with...\n',
                           ));

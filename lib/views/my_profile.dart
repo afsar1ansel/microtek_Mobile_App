@@ -41,8 +41,8 @@ class _MyProfileState extends State<MyProfile> {
         setState(() {
           nameController.text = data['username'] ?? '';
           emailController.text = data['email'] ?? '';
-          userIdController.text = data['userId'] ?? '';
-          mobileController.text = data['mobile'] ?? '';
+          userIdController.text = data['user_id'] ?? '';
+          mobileController.text = data['contact_no'] ?? '';
           branchController.text = data['branch'] ?? '';
           cityController.text = data['city'] ?? '';
         });
@@ -67,8 +67,8 @@ class _MyProfileState extends State<MyProfile> {
           'token': token,
           'username': nameController.text.trim(),
           'email': emailController.text.trim(),
-          'userId': userIdController.text.trim(),
-          'mobile': mobileController.text.trim(),
+          'user_id': userIdController.text.trim(),
+          'contact_no': mobileController.text.trim(),
           'branch': branchController.text.trim(),
           'city': cityController.text.trim(),
         };
@@ -261,28 +261,28 @@ class _MyProfileState extends State<MyProfile> {
             ),
 
             // Update Button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-              child: TextButton(
-                onPressed: updateProfile,
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4694),
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text(
-                  "Update Profile",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+            //   child: TextButton(
+            //     onPressed: updateProfile,
+            //     style: TextButton.styleFrom(
+            //       backgroundColor: const Color(0xFF1D4694),
+            //       padding: const EdgeInsets.symmetric(vertical: 16.0),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(10.0),
+            //       ),
+            //       minimumSize: const Size(double.infinity, 50),
+            //     ),
+            //     child: const Text(
+            //       "Update Profile",
+            //       style: TextStyle(
+            //         color: Colors.white,
+            //         fontSize: 20,
+            //         fontWeight: FontWeight.w500,
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
