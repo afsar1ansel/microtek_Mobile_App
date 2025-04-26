@@ -8,14 +8,7 @@ import 'package:microtek_mobile_app/views/profile.dart';
 import 'package:microtek_mobile_app/views/reports.dart';
 import 'package:microtek_mobile_app/views/splash_screen.dart';
 import 'package:microtek_mobile_app/views/system_details.dart';
-
-// import 'dart:async';
-// import 'dart:convert';
-// import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// import 'dart:io';
-// import 'package:csv/csv.dart';
-// import 'package:path_provider/path_provider.dart';
+import 'package:microtek_mobile_app/network_aware_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,49 +19,52 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mesha',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF1D4694), // Customize the seed color
-          brightness: Brightness.light, // Use light mode
+    return NetworkAwareWidget(
+      // Wrap the whole app with NetworkAwareWidget
+      child: MaterialApp(
+        title: 'Microtek',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Color(0xFF1D4694), // Customize the seed color
+            brightness: Brightness.light, // Use light mode
+          ),
+          useMaterial3: true,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          ),
         ),
-        useMaterial3: true,
-        // textTheme: Typography.material2021(),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('es'), // Spanish
+          Locale('fr'), // French
+          Locale('zh'), // Chinese
+          Locale('hi'), // Hindi
+        ],
+        home: const SplashScreen(),
+        routes: {
+          '/login': (context) => const LogIn(),
+          '/home': (context) => const BluetoothDeviceManager(),
+          '/reports': (context) => const ReportsScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/my_profile': (context) => MyProfile(),
+          // '/change_password': (context) => const ChangePasswordPage(),
+          // '/system_details': (context) => const SystemDetails(),
+          // '/test': (context) => const HomeScreen(),
+        },
       ),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('es'), // Spanish
-        Locale('fr'), // French
-        Locale('zh'), // Chinese
-        Locale('hi'), // Hindi
-      ],
-      home: const SplashScreen(),
-      routes: {
-        '/login': (context) => const LogIn(),
-        '/home': (context) => const BluetoothDeviceManager(),
-        '/reports': (context) => const ReportsScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/my_profile': (context) => MyProfile(),
-        // '/change_password': (context) => const ChangePasswordPage(),
-        // '/system_details': (context) => const SystemDetails(),
-        // '/test': (context) => const HomeScreen(),
-      },
     );
   }
 }
+
 
 // class HomeScreen extends StatefulWidget {
 //   const HomeScreen({super.key});

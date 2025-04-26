@@ -176,7 +176,7 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
   }
 
   String formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}'; // Customize the date format as needed
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}'; // Customize the date and time format as needed
   }
 
   // Future<void> _showDurationOptions(BuildContext context) async {

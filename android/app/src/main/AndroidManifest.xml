@@ -36,7 +36,7 @@
 
     <application
         android:requestLegacyExternalStorage="true"
-        android:label="Microtek"
+        android:label="Microtek Energy Tracker (MET)"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 

@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFF848B9F)),
                         ),
                         onTap: () {
-                          launchUrl(Uri.parse('tel:+91 84475 65934'));
+                          launchUrl(Uri.parse('tel:+91 9355604485'));
                         },
                       ),
                       const Divider(height: 0),

@@ -112,7 +112,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   }
 
   String formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}'; // Customize the date format as needed
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}'; // Customize the date and time format as needed
   }
 
   Future<void> moveFileToCache() async {
@@ -376,6 +376,50 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         ),
       );
     });
+  }
+
+  void openDeleteDataDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Warning!',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          content: const Text(
+            'Please note that starting the test will erase all data currently stored in the MET Device. Are you sure you want to delete the data and Start the test?',
+            style: TextStyle(fontSize: 10),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey.shade700,
+                foregroundColor: Colors.white70,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey.shade700,
+                foregroundColor: Colors.white70,
+              ),
+              onPressed: () {
+                deleteData(); // Call the delete function
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Variables to store selected dates and times
@@ -946,7 +990,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                               width: 30,
                               child: IconButton(
                                 icon: Icon(Icons.cloud_done_rounded,
-                                    color: Colors.blue),
+                                    color: Colors.green),
                                 onPressed: () {},
                               ),
                             ),
@@ -1026,7 +1070,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: deleteData,
+                      onPressed: openDeleteDataDialog,
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.grey.shade300,
                         foregroundColor: Colors.black,

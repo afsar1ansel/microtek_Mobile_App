@@ -164,25 +164,25 @@ class _MyProfileState extends State<MyProfile> {
                       const SizedBox(height: 16),
 
                       // Email Field
-                      TextFormField(
-                        controller: emailController,
-                        decoration: const InputDecoration(
-                          labelText: "Email",
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email cannot be empty';
-                          } else if (!RegExp(
-                                  r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-                              .hasMatch(value)) {
-                            return 'Please enter a valid email address';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                      // TextFormField(
+                      //   controller: emailController,
+                      //   decoration: const InputDecoration(
+                      //     labelText: "Email",
+                      //     border: OutlineInputBorder(),
+                      //   ),
+                      //   keyboardType: TextInputType.emailAddress,
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Email cannot be empty';
+                      //     } else if (!RegExp(
+                      //             r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                      //         .hasMatch(value)) {
+                      //       return 'Please enter a valid email address';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
+                      // const SizedBox(height: 16),
 
                       // Mobile Number Field
                       TextFormField(

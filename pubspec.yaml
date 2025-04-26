@@ -50,6 +50,7 @@ dependencies:
   open_file: ^3.3.2
   share_plus: ^10.1.4
   ai_barcode_scanner: ^6.0.1
+  connectivity_plus: ^5.0.2
 
 dev_dependencies:
   flutter_test:
