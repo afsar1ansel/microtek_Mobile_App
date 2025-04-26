@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'package:microtek_mobile_app/views/change_password.dart';
 import 'package:microtek_mobile_app/views/home_bluetooth.dart';
 import 'package:microtek_mobile_app/views/login.dart';
@@ -8,63 +9,63 @@ import 'package:microtek_mobile_app/views/profile.dart';
 import 'package:microtek_mobile_app/views/reports.dart';
 import 'package:microtek_mobile_app/views/splash_screen.dart';
 import 'package:microtek_mobile_app/views/system_details.dart';
-import 'package:microtek_mobile_app/widget/network_aware_widget.dart';
+import 'package:microtek_mobile_app/aware/network_aware_widget.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return NetworkAwareWidget(
-      // Wrap the whole app with NetworkAwareWidget
-      child: MaterialApp(
-        title: 'Microtek',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Color(0xFF1D4694), // Customize the seed color
-            brightness: Brightness.light, // Use light mode
-          ),
-          useMaterial3: true,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
+    return MaterialApp(
+      title: 'Microtek',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xFF1D4694),
+          brightness: Brightness.light,
         ),
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('en'), // English
-          Locale('es'), // Spanish
-          Locale('fr'), // French
-          Locale('zh'), // Chinese
-          Locale('hi'), // Hindi
-        ],
-        home: const SplashScreen(),
-        routes: {
-          '/login': (context) => const LogIn(),
-          '/home': (context) => const BluetoothDeviceManager(),
-          '/reports': (context) => const ReportsScreen(),
-          '/profile': (context) => const ProfileScreen(),
-          '/my_profile': (context) => MyProfile(),
-          // '/change_password': (context) => const ChangePasswordPage(),
-          // '/system_details': (context) => const SystemDetails(),
-          // '/test': (context) => const HomeScreen(),
-        },
+        useMaterial3: true,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('es'), // Spanish
+        Locale('fr'), // French
+        Locale('zh'), // Chinese
+        Locale('hi'), // Hindi
+      ],
+      home: NetworkAwareWidget(
+        child: const SplashScreen(),
+      ),
+     routes: {
+        '/login': (context) => NetworkAwareWidget(child: const LogIn()),
+        '/home': (context) =>
+            NetworkAwareWidget(child: const BluetoothDeviceManager()),
+        '/reports': (context) =>
+            NetworkAwareWidget(child: const ReportsScreen()),
+        '/profile': (context) =>
+            NetworkAwareWidget(child: const ProfileScreen()),
+        '/my_profile': (context) => NetworkAwareWidget(child: MyProfile()),
+        // '/change_password': (context) => NetworkAwareWidget(child: const ChangePasswordPage()),
+        // '/system_details': (context) => NetworkAwareWidget(child: const SystemDetails()),
+      },
     );
   }
 }
-
 
 // class HomeScreen extends StatefulWidget {
 //   const HomeScreen({super.key});
