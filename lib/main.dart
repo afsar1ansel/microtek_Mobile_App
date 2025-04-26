@@ -8,7 +8,7 @@ import 'package:microtek_mobile_app/views/profile.dart';
 import 'package:microtek_mobile_app/views/reports.dart';
 import 'package:microtek_mobile_app/views/splash_screen.dart';
 import 'package:microtek_mobile_app/views/system_details.dart';
-import 'package:microtek_mobile_app/network_aware_widget.dart';
+import 'package:microtek_mobile_app/widget/network_aware_widget.dart';
 
 void main() {
   runApp(const MyApp());
