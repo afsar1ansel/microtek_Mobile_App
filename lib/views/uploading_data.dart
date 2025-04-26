@@ -235,10 +235,16 @@ class _UploadingDataState extends State<UploadingData> {
         snackbarFunction('Failed to upload CSV: ${response.statusCode}');
       }
     } catch (e) {
-      print("Error uploading CSV: $e");
       await moveFileToCache();
-      snackbarFunction('Error uploading CSV: $e');
+      if (e is http.ClientException) {
+        print("ClientException occurred.");
+        snackbarFunction('Connection error occurred. Please try again.');
+      } else {
+        print("Unexpected error: $e");
+        snackbarFunction('Something went wrong. Please try again.');
+      }
     }
+
   }
 
   void navigateToNextScreen() {
