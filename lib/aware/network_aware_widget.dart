@@ -15,17 +15,17 @@ class NetworkAwareWidget extends StatefulWidget {
 class _NetworkAwareWidgetState extends State<NetworkAwareWidget> {
   bool _isOffline = false;
   bool _isSlow = false;
+  bool _showMessage = false;
   late final Connectivity _connectivity;
   late final Stream<ConnectivityResult> _connectivityStream;
+  Timer? _messageTimer;
 
   @override
   void initState() {
     super.initState();
     _connectivity = Connectivity();
     _connectivityStream = _connectivity.onConnectivityChanged;
-    // Initial check
     _checkInitialState();
-    // Listen for changes
     _connectivityStream.listen((ConnectivityResult result) {
       setState(() {
         _isOffline = result == ConnectivityResult.none;
@@ -33,7 +33,14 @@ class _NetworkAwareWidgetState extends State<NetworkAwareWidget> {
       if (!_isOffline) {
         _checkInternetSpeed();
       }
+      _showStatusMessage();
     });
+  }
+
+  @override
+  void dispose() {
+    _messageTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkInitialState() async {
@@ -44,29 +51,40 @@ class _NetworkAwareWidgetState extends State<NetworkAwareWidget> {
     if (!_isOffline) {
       await _checkInternetSpeed();
     }
+    _showStatusMessage();
   }
 
-  // Function to check internet latency
-  // Function to check internet latency
   Future<void> _checkInternetSpeed() async {
     try {
       final stopwatch = Stopwatch()..start();
       final response = await http
-          .get(Uri.parse('[https://www.google.com](https://www.google.com)'));
+          .get(Uri.parse('https://www.google.com'))
+          .timeout(const Duration(seconds: 5));
       stopwatch.stop();
       final latency = stopwatch.elapsed;
-      if (latency > Duration(seconds: 1)) {
+      setState(() {
+        _isSlow = latency > const Duration(seconds: 1);
+      });
+    } catch (e) {
+      setState(() {
+        _isSlow = true;
+      });
+    }
+  }
+
+  void _showStatusMessage() {
+    setState(() {
+      _showMessage = true;
+    });
+
+    _messageTimer?.cancel();
+    _messageTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
         setState(() {
-          _isSlow = true; // Slow connection
-        });
-      } else {
-        setState(() {
-          _isSlow = false; // Fast connection
+          _showMessage = false;
         });
       }
-    } catch (e) {
-      // Handle the exception
-    }
+    });
   }
 
   @override
@@ -74,37 +92,65 @@ class _NetworkAwareWidgetState extends State<NetworkAwareWidget> {
     return Stack(
       children: [
         widget.child,
-        if (_isOffline)
+        if (_showMessage && (_isOffline || _isSlow))
           Positioned(
-            top: 0,
+            top: MediaQuery.of(context).padding.top,
             left: 0,
             right: 0,
-            child: Container(
-              color: Colors.red,
-              padding: const EdgeInsets.all(8),
-              child: const Text(
-                'No Internet Connection',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        if (_isSlow)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: Colors.orange,
-              padding: const EdgeInsets.all(8),
-              child: const Text(
-                'Slow Internet Connection',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
+            child: SafeArea(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _isOffline
+                    ? _buildStatusBanner(
+                        message: 'No Internet Connection',
+                        color: Colors.red.withOpacity(0.9),
+                        icon: Icons.wifi_off,
+                      )
+                    : _isSlow
+                        ? _buildStatusBanner(
+                            message: 'Slow Internet Connection',
+                            color: Colors.orange.withOpacity(0.9),
+                            icon: Icons.wifi_tethering_error,
+                          )
+                        : const SizedBox.shrink(),
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildStatusBanner({
+    required String message,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Material(
+        elevation: 4,
+        borderRadius: BorderRadius.circular(20),
+        color: color,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

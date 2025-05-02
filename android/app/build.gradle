@@ -6,35 +6,46 @@ plugins {
 }
 
 android {
-    namespace = "com.example.microtek_mobile_app"
-    compileSdk = flutter.compileSdkVersion.toInteger() // Ensure this is an integer
+    namespace = "com.microtek.eyetracker"
+    compileSdk = flutter.compileSdkVersion.toInteger()
     ndkVersion = flutter.ndkVersion
     dynamicFeatures = []
 
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17 // Update to Java 17
-        targetCompatibility = JavaVersion.VERSION_17 // Update to Java 17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '17' // Update to Java 17
+        jvmTarget = '17'
     }
 
     defaultConfig {
-        applicationId = "com.example.microtek_mobile_app"
-        minSdk = flutter.minSdkVersion.toInteger() // Ensure this is an integer
-        targetSdk = flutter.targetSdkVersion.toInteger() // Ensure this is an integer
-        versionCode = flutter.versionCode.toInteger() // Ensure this is an integer
+        applicationId = "com.microtek.eyetracker"
+        minSdk = flutter.minSdkVersion.toInteger()
+        targetSdk = flutter.targetSdkVersion.toInteger()
+        versionCode = flutter.versionCode.toInteger()
         versionName = flutter.versionName
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
-
-            // Enable code shrinking and obfuscation
+            signingConfig = signingConfigs.release
             minifyEnabled = true
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -49,5 +60,6 @@ flutter {
 dependencies {
     implementation 'com.google.errorprone:error_prone_annotations:2.18.0'
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
-    implementation 'com.google.android.play:core:1.10.3'
+    // implementation 'com.google.android.play:core-ktx:1.8.1'
+
 }

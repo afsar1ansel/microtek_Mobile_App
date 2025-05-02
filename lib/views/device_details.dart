@@ -46,7 +46,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
+        '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
     List<FileSystemEntity> cache_files = [];
     final cacheFiles = cacheDir.listSync();
 
@@ -129,7 +129,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
+              '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {

@@ -67,7 +67,7 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
+        '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
     final cacheFiles = cacheDir.listSync();
 
     setState(() {
@@ -90,7 +90,7 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
+              '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {

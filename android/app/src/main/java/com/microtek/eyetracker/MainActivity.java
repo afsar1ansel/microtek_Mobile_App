@@ -1,4 +1,4 @@
-package com.example.microtek_mobile_app;
+package com.microtek.eyetracker;
 
 import io.flutter.embedding.android.FlutterActivity;
 

@@ -21,3 +21,4 @@
 
 -keep class com.signify.hue.** { *; }
 -keep class com.lib.flutter_blue_plus.* { *; }
+-keep class com.microtek.eyetracker.MainActivity { *; }

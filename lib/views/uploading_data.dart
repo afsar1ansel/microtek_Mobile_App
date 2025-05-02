@@ -89,7 +89,7 @@ class _UploadingDataState extends State<UploadingData> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.example.microtek_mobile_app/cache');
+              '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {
@@ -244,7 +244,6 @@ class _UploadingDataState extends State<UploadingData> {
         snackbarFunction('Something went wrong. Please try again.');
       }
     }
-
   }
 
   void navigateToNextScreen() {
