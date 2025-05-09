@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:microtek_mobile_app/views/dry.dart';
 import 'package:path/path.dart';
 
 class RetrievingData extends StatefulWidget {
@@ -134,84 +135,93 @@ class _RetrievingDataState extends State<RetrievingData> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: AppBar(
-          title: const Text("M4 Device Name"),
-          centerTitle: true,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(20),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(4, (index) {
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: index == 0 ? progress : 0,
-                          minHeight: 6,
-                          backgroundColor: Colors.grey[300],
-                          valueColor:
-                              const AlwaysStoppedAnimation<Color>(Colors.blue),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) return;
+
+        await moveFileToCacheDry(storage);
+        await navigateBasedOnPageIndex(storage, context, widget.device);
+      },
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: AppBar(
+            title: const Text("M4 Device Name"),
+            centerTitle: true,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(20),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(4, (index) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: index == 0 ? progress : 0,
+                            minHeight: 6,
+                            backgroundColor: Colors.grey[300],
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.blue),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Center(
-              child: Text(
-                generateDisplayText(),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: Text(
+                  generateDisplayText(),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Card(
-              color: const Color(0xFF203344),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.cloud_download_outlined,
-                        color: Colors.white, size: 30),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      // Ensures text does not overflow
-                      child: Text(
-                        getProgressText(),
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 18),
-                        softWrap: true, // Enables text wrapping
-                        overflow: TextOverflow
-                            .visible, // Ensures text is fully displayed
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: const Color(0xFF203344),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.cloud_download_outlined,
+                          color: Colors.white, size: 30),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        // Ensures text does not overflow
+                        child: Text(
+                          getProgressText(),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 18),
+                          softWrap: true, // Enables text wrapping
+                          overflow: TextOverflow
+                              .visible, // Ensures text is fully displayed
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

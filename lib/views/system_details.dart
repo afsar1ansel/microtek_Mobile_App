@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:microtek_mobile_app/views/dry.dart';
 import 'package:microtek_mobile_app/views/uploading_data.dart';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -290,58 +291,67 @@ class _SystemDetailsState extends State<SystemDetails> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("System Details"),
-        centerTitle: true,
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                buildTextField(
-                  "Service Request Number*",
-                  serviceRequestNumber,
-                  required: true,
-                ),
-                const SizedBox(height: 16),
-                _buildBatterySystemDropdown(),
-                const SizedBox(height: 16),
-                buildTextField(
-                  "Battery Serial Number*",
-                  batterySerialController,
-                  required: true,
-                  hasQrIcon: true,
-                  onQrPressed: _scanQRCode,
-                ),
-                const SizedBox(height: 16),
-                if (_isValidating)
-                  const Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 8),
-                      Text('Validating credentials...'),
-                    ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) return;
+
+        await moveFileToCacheDry(storage);
+        await navigateBasedOnPageIndex(storage, context, widget.device);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text("System Details"),
+          centerTitle: true,
+        ),
+        body: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  buildTextField(
+                    "Service Request Number*",
+                    serviceRequestNumber,
+                    required: true,
                   ),
-                if (_areAllFieldsFilled() && !_isValidating && !_isValidJob)
-                  ElevatedButton(
-                    onPressed: _validateJobDetails,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade50,
-                      foregroundColor: Colors.blue,
+                  const SizedBox(height: 16),
+                  _buildBatterySystemDropdown(),
+                  const SizedBox(height: 16),
+                  buildTextField(
+                    "Battery Serial Number*",
+                    batterySerialController,
+                    required: true,
+                    hasQrIcon: true,
+                    onQrPressed: _scanQRCode,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isValidating)
+                    const Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Validating credentials...'),
+                      ],
                     ),
-                    child: const Text('Revalidate Credentials'),
-                  ),
-              ],
+                  if (_areAllFieldsFilled() && !_isValidating && !_isValidJob)
+                    ElevatedButton(
+                      onPressed: _validateJobDetails,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade50,
+                        foregroundColor: Colors.blue,
+                      ),
+                      child: const Text('Revalidate Credentials'),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
+        bottomNavigationBar: _buildProceedButton(),
       ),
-      bottomNavigationBar: _buildProceedButton(),
     );
   }
 

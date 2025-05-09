@@ -460,434 +460,443 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Reports',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) return;
+        // Perform any action when the back button is pressed
+        Navigator.pushReplacementNamed(context, '/home');
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text(
+            'Reports',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+          ),
+          automaticallyImplyLeading: false,
         ),
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pending Reports Section
+                const Text(
+                  'Pending Reports',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: catchFiles.length,
+                  itemBuilder: (context, index) {
+                    final file = catchFiles[index];
+                    return Column(
+                      children: [
+                        ListTile(
+                          onTap: () => _openFile(file),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 0,
+                            vertical: 0,
+                          ),
+                          leading: SvgPicture.asset(
+                            file.path.endsWith('.csv')
+                                ? 'assets/svg/csv.svg'
+                                : 'assets/svg/pdf.svg',
+                            width: 40,
+                            height: 40,
+                          ),
+                          title: Text(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            file.path.split('/').last,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          subtitle: Row(
+                            children: [
+                              Text(
+                                formatDate(file
+                                    .statSync()
+                                    .modified), // Display last modified date
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(
+                                  width:
+                                      8), // Add some spacing between the date and file size
+                              Text(
+                                formatFileSize(file
+                                    .statSync()
+                                    .size), // Display formatted file size
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 40,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_circle_up_rounded,
+                                    color: Colors.blue,
+                                  ),
+                                  onPressed: () {
+                                    _uploadFileToCloud(file);
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 35,
+                                child: IconButton(
+                                  icon: Icon(Icons.cloud_off_rounded,
+                                      color: Colors.red),
+                                  onPressed: () {},
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                // Reports Generated Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Reports Generated',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        // _showDateTimePicker(context);
+                        print("Date-time picker clicked!");
+                      },
+                      icon: const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 24,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Sorting Buttons (Wrapped in SingleChildScrollView)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // All Button
+                      IntrinsicWidth(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              activeFilter =
+                                  'all'; // Set filter to show all files
+                            });
+                            fetchFiles(); // Refresh the list
+                            print("All button clicked!");
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: activeFilter == 'all'
+                                  ? Colors.blue
+                                  : Colors.grey.shade400,
+                            ),
+                            backgroundColor: activeFilter == 'all'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'All',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: activeFilter == 'all'
+                                  ? Colors.blue
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Reports Button (PDF)
+                      IntrinsicWidth(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              activeFilter = 'pdf'; // Set filter to PDF
+                            });
+                            fetchFiles(); // Refresh the list
+                            print("Reports button clicked!");
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: activeFilter == 'pdf'
+                                  ? Colors.blue
+                                  : Colors.grey.shade400,
+                            ),
+                            backgroundColor: activeFilter == 'pdf'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'Reports',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: activeFilter == 'pdf'
+                                  ? Colors.blue
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // CSV Button
+                      IntrinsicWidth(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              activeFilter = 'csv'; // Set filter to CSV
+                            });
+                            fetchFiles(); // Refresh the list
+                            print("CSV button clicked!");
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: activeFilter == 'csv'
+                                  ? Colors.blue
+                                  : Colors.grey.shade400,
+                            ),
+                            backgroundColor: activeFilter == 'csv'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'CSV',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: activeFilter == 'csv'
+                                  ? Colors.blue
+                                  : Colors.black87,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Duration Button
+                      IntrinsicWidth(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _showDurationOptions(
+                                context); // Show duration options
+                            print("Duration button clicked!");
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: activeFilter == 'duration'
+                                  ? Colors.blue
+                                  : Colors.grey.shade400,
+                            ),
+                            backgroundColor: activeFilter == 'duration'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'Duration',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: activeFilter == 'duration'
+                                  ? Colors.blue
+                                  : Colors.black87,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (selectedDuration !=
+                          null) // Display the selected duration
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            selectedDuration!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // List of reportsGenerated
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: files.length,
+                  itemBuilder: (context, index) {
+                    final file = files[index];
+
+                    return Column(
+                      children: [
+                        ListTile(
+                          onTap: () => _openFile(file),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 0, vertical: 0),
+                          leading: SvgPicture.asset(
+                            file.path.endsWith('.csv')
+                                ? 'assets/svg/csv.svg'
+                                : 'assets/svg/pdf.svg',
+                            width: 40,
+                            height: 40,
+                          ),
+                          title: Text(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            file.path.split('/').last,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          subtitle: Row(
+                            children: [
+                              Text(
+                                formatDate(file
+                                    .statSync()
+                                    .modified), // Last modified date
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                formatFileSize(
+                                    file.statSync().size), // File size
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w400),
+                              ),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Transform.rotate(
+                                  angle: pi / 2,
+                                  child: const Icon(
+                                      Icons.arrow_circle_right_sharp,
+                                      color: Colors.blue),
+                                ),
+                                onPressed: () => _openFile(file),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.cloud_done_rounded,
+                                    color: Colors.green),
+                                onPressed: () {},
+                              ),
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'share') {
+                                    _shareFile(file as File);
+                                  } else if (value == 'delete') {
+                                    _deleteFile(file as File, index);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  const PopupMenuItem(
+                                    value: 'share',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.share, color: Colors.blue),
+                                        SizedBox(width: 10),
+                                        Text('Share'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete,
+                                            color: Color(0xFFb91c1c)),
+                                        SizedBox(width: 10),
+                                        Text('Delete'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Colors.grey.shade300,
+                width: 1.0,
+              ),
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Pending Reports Section
-              const Text(
-                'Pending Reports',
-                style: TextStyle(
-                  fontSize: 20,
+              Text(
+                '${files.length} reports generated.',
+                style: const TextStyle(
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: catchFiles.length,
-                itemBuilder: (context, index) {
-                  final file = catchFiles[index];
-                  return Column(
-                    children: [
-                      ListTile(
-                        onTap: () => _openFile(file),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 0,
-                          vertical: 0,
-                        ),
-                        leading: SvgPicture.asset(
-                          file.path.endsWith('.csv')
-                              ? 'assets/svg/csv.svg'
-                              : 'assets/svg/pdf.svg',
-                          width: 40,
-                          height: 40,
-                        ),
-                        title: Text(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          file.path.split('/').last,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            Text(
-                              formatDate(file
-                                  .statSync()
-                                  .modified), // Display last modified date
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(
-                                width:
-                                    8), // Add some spacing between the date and file size
-                            Text(
-                              formatFileSize(file
-                                  .statSync()
-                                  .size), // Display formatted file size
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 40,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.arrow_circle_up_rounded,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () {
-                                  _uploadFileToCloud(file);
-                                },
-                              ),
-                            ),
-                            SizedBox(
-                              width: 35,
-                              child: IconButton(
-                                icon: Icon(Icons.cloud_off_rounded,
-                                    color: Colors.red),
-                                onPressed: () {},
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-
-// Reports Generated Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Reports Generated',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      // _showDateTimePicker(context);
-                      print("Date-time picker clicked!");
-                    },
-                    icon: const Icon(
-                      Icons.calendar_today_rounded,
-                      size: 24,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-// Sorting Buttons (Wrapped in SingleChildScrollView)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    // All Button
-                    IntrinsicWidth(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            activeFilter =
-                                'all'; // Set filter to show all files
-                          });
-                          fetchFiles(); // Refresh the list
-                          print("All button clicked!");
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: activeFilter == 'all'
-                                ? Colors.blue
-                                : Colors.grey.shade400,
-                          ),
-                          backgroundColor: activeFilter == 'all'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.transparent,
-                        ),
-                        child: Text(
-                          'All',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: activeFilter == 'all'
-                                ? Colors.blue
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Reports Button (PDF)
-                    IntrinsicWidth(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            activeFilter = 'pdf'; // Set filter to PDF
-                          });
-                          fetchFiles(); // Refresh the list
-                          print("Reports button clicked!");
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: activeFilter == 'pdf'
-                                ? Colors.blue
-                                : Colors.grey.shade400,
-                          ),
-                          backgroundColor: activeFilter == 'pdf'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.transparent,
-                        ),
-                        child: Text(
-                          'Reports',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: activeFilter == 'pdf'
-                                ? Colors.blue
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // CSV Button
-                    IntrinsicWidth(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            activeFilter = 'csv'; // Set filter to CSV
-                          });
-                          fetchFiles(); // Refresh the list
-                          print("CSV button clicked!");
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: activeFilter == 'csv'
-                                ? Colors.blue
-                                : Colors.grey.shade400,
-                          ),
-                          backgroundColor: activeFilter == 'csv'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.transparent,
-                        ),
-                        child: Text(
-                          'CSV',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: activeFilter == 'csv'
-                                ? Colors.blue
-                                : Colors.black87,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Duration Button
-                    IntrinsicWidth(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _showDurationOptions(
-                              context); // Show duration options
-                          print("Duration button clicked!");
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: activeFilter == 'duration'
-                                ? Colors.blue
-                                : Colors.grey.shade400,
-                          ),
-                          backgroundColor: activeFilter == 'duration'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.transparent,
-                        ),
-                        child: Text(
-                          'Duration',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: activeFilter == 'duration'
-                                ? Colors.blue
-                                : Colors.black87,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (selectedDuration !=
-                        null) // Display the selected duration
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text(
-                          selectedDuration!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-                  ],
+              Text(
+                'Cloud data will be archived and deleted after 30 days.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: const Color(0xFF848F8B),
                 ),
               ),
-              const SizedBox(height: 10),
-
-              // List of reportsGenerated
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: files.length,
-                itemBuilder: (context, index) {
-                  final file = files[index];
-
-                  return Column(
-                    children: [
-                      ListTile(
-                        onTap: () => _openFile(file),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 0),
-                        leading: SvgPicture.asset(
-                          file.path.endsWith('.csv')
-                              ? 'assets/svg/csv.svg'
-                              : 'assets/svg/pdf.svg',
-                          width: 40,
-                          height: 40,
-                        ),
-                        title: Text(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          file.path.split('/').last,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w400),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            Text(
-                              formatDate(file
-                                  .statSync()
-                                  .modified), // Last modified date
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              formatFileSize(file.statSync().size), // File size
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w400),
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Transform.rotate(
-                                angle: pi / 2,
-                                child: const Icon(
-                                    Icons.arrow_circle_right_sharp,
-                                    color: Colors.blue),
-                              ),
-                              onPressed: () => _openFile(file),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.cloud_done_rounded,
-                                  color: Colors.green),
-                              onPressed: () {},
-                            ),
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                if (value == 'share') {
-                                  _shareFile(file as File);
-                                } else if (value == 'delete') {
-                                  _deleteFile(file as File, index);
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                const PopupMenuItem(
-                                  value: 'share',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.share, color: Colors.blue),
-                                      SizedBox(width: 10),
-                                      Text('Share'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete,
-                                          color: Color(0xFFb91c1c)),
-                                      SizedBox(width: 10),
-                                      Text('Delete'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(),
-                    ],
-                  );
-                },
-              ),
+              const SizedBox(height: 8.0),
+              BottomNavBar(currentIndex: 1),
             ],
           ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey.shade300,
-              width: 1.0,
-            ),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${files.length} reports generated.',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              'Cloud data will be archived and deleted after 30 days.',
-              style: TextStyle(
-                fontSize: 12,
-                color: const Color(0xFF848F8B),
-              ),
-            ),
-            const SizedBox(height: 8.0),
-            BottomNavBar(currentIndex: 1),
-          ],
         ),
       ),
     );

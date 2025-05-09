@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:io';
 import 'package:csv/csv.dart';
+import 'package:microtek_mobile_app/views/device_disconnection_page.dart';
 import 'package:microtek_mobile_app/views/system_details.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
@@ -35,6 +36,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   List<FileSystemEntity> files = [];
   List<FileSystemEntity> catchFiles = [];
   String activeFilter = 'pdf'; // Default filter
+
+  bool _isDeviceConnected = true;
+  StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
+  bool _disconnectionDetected = false;
 
   @override
   void initState() {
@@ -158,10 +163,45 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     }
   }
 
+  void _navigateToDisconnectionPage() {
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DeviceDisconnectionPage(
+            deviceName: widget.device?.platformName ?? 'Mesha BT Device',
+            onRetry: () => connectToDevice(widget.device!),
+          ),
+        ),
+      );
+    }
+  }
+
   /// Connect to a Selected Device
   void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
-    discoverServices();
+    // Subscribe to connection state changes before connecting
+    _connectionSubscription = device.connectionState.listen((state) {
+      setState(() {
+        _isDeviceConnected = (state == BluetoothConnectionState.connected);
+
+        if (!_isDeviceConnected && !isDataRetrievalComplete) {
+          _disconnectionDetected = true;
+          _navigateToDisconnectionPage();
+        }
+      });
+    });
+
+    try {
+      await device.connect(
+          autoConnect: false, timeout: const Duration(seconds: 15));
+      discoverServices();
+    } catch (e) {
+      setState(() {
+        _isDeviceConnected = false;
+        _disconnectionDetected = true;
+      });
+      _navigateToDisconnectionPage();
+    }
   }
 
   /// Discover Bluetooth Services
@@ -314,10 +354,23 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   /// Send *GET$ Command to Retrieve Data
   void retrieveData() async {
+    if (!_isDeviceConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Device is not connected. Please ensure it is powered on and in range.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     _retrievedData = "";
-    isDataRetrievalComplete = false; // Reset the flag
+    _disconnectionDetected = false;
+    isDataRetrievalComplete = false;
+
     sendData("*GET\$");
-    _showRetrievingDataDialog(); // Show the dialog
+    _showRetrievingDataDialog();
   }
 
   void _showRetrievingDataDialog() {
@@ -325,30 +378,62 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Retrieving Data'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Center(
-                  child: Text(
-                    'Please wait while data is being retrieved...',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Center(child: CircularProgressIndicator()),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Periodically check connection status
+            Timer.periodic(const Duration(seconds: 1), (timer) {
+              if (!_isDeviceConnected || _disconnectionDetected) {
+                timer.cancel();
                 Navigator.of(context).pop();
-              },
-            ),
-          ],
+                _navigateToDisconnectionPage();
+              }
+            });
+
+            return AlertDialog(
+              title: const Text('Retrieving Data'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                      'Please keep the device close during data transfer.'),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Icon(
+                        _isDeviceConnected
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        color:
+                            _isDeviceConnected ? Color(0xFF1D4694) : Colors.red,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _isDeviceConnected
+                            ? 'Device Connected'
+                            : 'Device Disconnected',
+                        style: TextStyle(
+                          color: _isDeviceConnected
+                              ? Color(0xFF1D4694)
+                              : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const CircularProgressIndicator(),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -682,7 +767,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   @override
   void dispose() {
-    _rxSubscription?.cancel(); // Cancel the subscription
+    _rxSubscription?.cancel();
+    _connectionSubscription?.cancel();
     super.dispose();
   }
 
@@ -1164,7 +1250,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       await storage.write(key: "pageIndex", value: "0");
 
       if (mounted) {
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => SystemDetails(device: widget.device),

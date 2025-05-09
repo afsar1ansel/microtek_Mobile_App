@@ -1,0 +1,2 @@
+C:/Users/mchet/OneDrive/Desktop/Projects/flutter_projects/microtek_Mobile_App/android/app/.cxx/Debug/6g3ns5g5/x86/CMakeFiles/edit_cache.dir
+C:/Users/mchet/OneDrive/Desktop/Projects/flutter_projects/microtek_Mobile_App/android/app/.cxx/Debug/6g3ns5g5/x86/CMakeFiles/rebuild_cache.dir
