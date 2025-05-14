@@ -50,7 +50,7 @@ class _SystemDetailsState extends State<SystemDetails> {
     _userId = await storage.read(key: 'user_id');
   }
 
-//   Future<void> _loadUserId() async {
+  //   Future<void> _loadUserId() async {
 //   try {
 //     setState(() {
 //       _isLoadingUserId = true;
@@ -106,6 +106,7 @@ class _SystemDetailsState extends State<SystemDetails> {
 // }
 
   bool _areAllFieldsFilled() {
+
     return serviceRequestNumber.text.isNotEmpty &&
         batterySerialController.text.isNotEmpty &&
         batterySystem != null;
@@ -187,16 +188,43 @@ class _SystemDetailsState extends State<SystemDetails> {
           if (responseData.isNotEmpty) {
             final result = responseData.first;
             if (result['res_code'] == 1) {
-              setState(() {
-                _isValidJob = true;
-              });
-              // ScaffoldMessenger.of(context).showSnackBar(
-              //   SnackBar(
-              //     content: Text('Validation successful'),
-              //     backgroundColor: Colors.green,
-              //     duration: Duration(seconds: 3),
-              //   ),
-              // );
+              // Check for edge cases: Cancelled or Closed job status
+              if (result['job_status']?.toLowerCase() == 'cancel') {
+                setState(() {
+                  _isValidJob = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('The job has been cancelled.'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              } else if (result['job_status']?.toLowerCase() == 'closed') {
+                setState(() {
+                  _isValidJob = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('The job has been closed.'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              } else {
+                // If no edge cases, set isValidJob to true
+                setState(() {
+                  _isValidJob = true;
+                });
+                // Uncomment this if you want to show a success message
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Validation successful'),
+                //     backgroundColor: Colors.green,
+                //     duration: Duration(seconds: 3),
+                //   ),
+                // );
+              }
             } else {
               String errorMessage = result['res_msg'] ?? 'Invalid details';
 
