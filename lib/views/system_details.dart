@@ -36,7 +36,7 @@ class _SystemDetailsState extends State<SystemDetails> {
   void initState() {
     super.initState();
     _loadUserId();
-    loadInputsFromStorage();
+    loadFormData(); // Load saved data when initializing
   }
 
   @override
@@ -51,29 +51,31 @@ class _SystemDetailsState extends State<SystemDetails> {
     _userId = await storage.read(key: 'user_id');
   }
 
-  Future<void> saveInputsToStorage() async {
-    final csvFilePath = await storage.read(key: 'csvFilePath');
-    if (csvFilePath != null) {
-      await storage.write(
-          key: '${csvFilePath}_serviceRequestNumber',
-          value: serviceRequestNumber.text);
-      await storage.write(
-          key: '${csvFilePath}_batterySerialNumber',
-          value: batterySerialController.text);
+  Future<void> saveFormData() async {
+    final fileName = await storage.read(key: 'csvFilePath');
+    if (fileName != null) {
+      Map<String, dynamic> formData = {
+        "Service Request Number": serviceRequestNumber.text,
+        "Battery System": batterySystem,
+        "Battery Serial Number": batterySerialController.text,
+      };
+      await storage.write(key: fileName, value: jsonEncode(formData));
     }
   }
 
-  Future<void> loadInputsFromStorage() async {
-    final csvFilePath = await storage.read(key: 'csvFilePath');
-    if (csvFilePath != null) {
-      final savedServiceRequest =
-          await storage.read(key: '${csvFilePath}_serviceRequestNumber');
-      final savedBatterySerial =
-          await storage.read(key: '${csvFilePath}_batterySerialNumber');
-      setState(() {
-        serviceRequestNumber.text = savedServiceRequest ?? '';
-        batterySerialController.text = savedBatterySerial ?? '';
-      });
+  Future<void> loadFormData() async {
+    final fileName = await storage.read(key: 'csvFilePath');
+    if (fileName != null) {
+      final savedData = await storage.read(key: fileName);
+      if (savedData != null) {
+        Map<String, dynamic> formData = jsonDecode(savedData);
+        setState(() {
+          serviceRequestNumber.text = formData["Service Request Number"] ?? '';
+          batterySystem = formData["Battery System"];
+          batterySerialController.text =
+              formData["Battery Serial Number"] ?? '';
+        });
+      }
     }
   }
 
@@ -84,7 +86,7 @@ class _SystemDetailsState extends State<SystemDetails> {
   }
 
   void _onTextChanged() {
-    saveInputsToStorage();
+    saveFormData(); // Save data whenever fields change
     if (!_areAllFieldsFilled()) {
       setState(() {
         _validationMessage = null;
@@ -115,6 +117,7 @@ class _SystemDetailsState extends State<SystemDetails> {
       if (scannedValue != null && mounted) {
         setState(() {
           batterySerialController.text = scannedValue;
+          saveFormData(); // Save the scanned value
           if (_areAllFieldsFilled()) {
             _validateJobDetails();
           }
@@ -183,23 +186,13 @@ class _SystemDetailsState extends State<SystemDetails> {
                   ),
                 );
               } else {
-                // If no edge cases, set isValidJob to true
                 setState(() {
                   _isValidJob = true;
                 });
-                // Uncomment this if you want to show a success message
-                // ScaffoldMessenger.of(context).showSnackBar(
-                //   SnackBar(
-                //     content: Text('Validation successful'),
-                //     backgroundColor: Colors.green,
-                //     duration: Duration(seconds: 3),
-                //   ),
-                // );
               }
             } else {
               String errorMessage = result['res_msg'] ?? 'Invalid details';
 
-              // Customize error messages based on API response
               String userFriendlyMessage;
               if (errorMessage.toLowerCase().contains('job')) {
                 userFriendlyMessage = 'Service Request Number is not valid';
@@ -267,7 +260,7 @@ class _SystemDetailsState extends State<SystemDetails> {
           "batter_serial_no_1": batterySerialController.text,
         };
 
-        await saveInputsToStorage();
+        await saveFormData(); // Save data before proceeding
 
         if (mounted) {
           Navigator.pushReplacement(
