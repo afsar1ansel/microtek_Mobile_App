@@ -36,6 +36,7 @@ class _SystemDetailsState extends State<SystemDetails> {
   void initState() {
     super.initState();
     _loadUserId();
+    loadInputsFromStorage();
   }
 
   @override
@@ -50,69 +51,40 @@ class _SystemDetailsState extends State<SystemDetails> {
     _userId = await storage.read(key: 'user_id');
   }
 
-  //   Future<void> _loadUserId() async {
-//   try {
-//     setState(() {
-//       _isLoadingUserId = true;
-//       _userId = null; // Clear previous value while loading
-//     });
+  Future<void> saveInputsToStorage() async {
+    final csvFilePath = await storage.read(key: 'csvFilePath');
+    if (csvFilePath != null) {
+      await storage.write(
+          key: '${csvFilePath}_serviceRequestNumber',
+          value: serviceRequestNumber.text);
+      await storage.write(
+          key: '${csvFilePath}_batterySerialNumber',
+          value: batterySerialController.text);
+    }
+  }
 
-//     final token = await storage.read(key: 'userToken');
-//     if (token == null) {
-//       throw Exception('User token not found');
-//     }
-
-//     final response = await http.get(
-//       Uri.parse('https://met.microtek.in/app-users/profile/details/$token'),
-//     ).timeout(const Duration(seconds: 10));
-
-//     if (!mounted) return;
-
-//     if (response.statusCode == 200) {
-//       final data = json.decode(response.body);
-//       final userIdStr = data['user_id']?.toString();
-
-//       if (userIdStr == null || userIdStr.isEmpty) {
-//         throw Exception('User ID not found in response');
-//       }
-
-//       setState(() {
-//         _userId = int.tryParse(userIdStr);
-//         _isLoadingUserId = false;
-//       });
-
-//       if (_userId == null) {
-//         throw Exception('Invalid user ID format: $userIdStr');
-//       }
-//     } else {
-//       throw Exception('API request failed with status ${response.statusCode}');
-//     }
-//   } catch (e) {
-//     if (mounted) {
-//       setState(() {
-//         _isLoadingUserId = false;
-//       });
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Failed to load user ID: ${e.toString()}'),
-//           action: SnackBarAction(
-//             label: 'Retry',
-//             onPressed: _loadUserId,
-//           ),
-//         ),
-//       );
-//     }
-//   }
-// }
+  Future<void> loadInputsFromStorage() async {
+    final csvFilePath = await storage.read(key: 'csvFilePath');
+    if (csvFilePath != null) {
+      final savedServiceRequest =
+          await storage.read(key: '${csvFilePath}_serviceRequestNumber');
+      final savedBatterySerial =
+          await storage.read(key: '${csvFilePath}_batterySerialNumber');
+      setState(() {
+        serviceRequestNumber.text = savedServiceRequest ?? '';
+        batterySerialController.text = savedBatterySerial ?? '';
+      });
+    }
+  }
 
   bool _areAllFieldsFilled() {
-
     return serviceRequestNumber.text.isNotEmpty &&
         batterySerialController.text.isNotEmpty &&
         batterySystem != null;
   }
 
   void _onTextChanged() {
+    saveInputsToStorage();
     if (!_areAllFieldsFilled()) {
       setState(() {
         _validationMessage = null;
@@ -120,7 +92,6 @@ class _SystemDetailsState extends State<SystemDetails> {
       });
       return;
     }
-
     _debounceTimer?.cancel();
     _debounceTimer = Timer(_debounceDelay, () {
       if (_areAllFieldsFilled()) {
@@ -295,6 +266,8 @@ class _SystemDetailsState extends State<SystemDetails> {
           "battery_system": batterySystem,
           "batter_serial_no_1": batterySerialController.text,
         };
+
+        await saveInputsToStorage();
 
         if (mounted) {
           Navigator.pushReplacement(
