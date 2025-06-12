@@ -846,22 +846,16 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                         subtitle: Row(
                           children: [
                             Text(
-                              formatDate(file
-                                  .statSync()
-                                  .modified), // Display last modified date
+                              formatDate(file.statSync().modified),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const SizedBox(
-                                width:
-                                    8), // Add some spacing between the date and file size
+                            const SizedBox(width: 8),
                             Text(
-                              formatFileSize(file
-                                  .statSync()
-                                  .size), // Display formatted file size
+                              formatFileSize(file.statSync().size),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
@@ -892,6 +886,39 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                                     color: Colors.red),
                                 onPressed: () {},
                               ),
+                            ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'share') {
+                                  _shareFile(file as File);
+                                }
+                                // else if (value == 'delete') {
+                                //   _deleteFile(file as File, index);
+                                // }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem(
+                                  value: 'share',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.share, color: Colors.blue),
+                                      SizedBox(width: 10),
+                                      Text('Share'),
+                                    ],
+                                  ),
+                                ),
+                                // const PopupMenuItem(
+                                //   value: 'delete',
+                                //   child: Row(
+                                //     children: [
+                                //       Icon(Icons.delete,
+                                //           color: Color(0xFFb91c1c)),
+                                //       SizedBox(width: 10),
+                                //       Text('Delete'),
+                                //     ],
+                                //   ),
+                                // ),
+                              ],
                             ),
                           ],
                         ),
@@ -1030,22 +1057,16 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                         subtitle: Row(
                           children: [
                             Text(
-                              formatDate(file
-                                  .statSync()
-                                  .modified), // Display last modified date
+                              formatDate(file.statSync().modified),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const SizedBox(
-                                width:
-                                    8), // Add some spacing between the date and file size
+                            const SizedBox(width: 8),
                             Text(
-                              formatFileSize(file
-                                  .statSync()
-                                  .size), // Display formatted file size
+                              formatFileSize(file.statSync().size),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
@@ -1177,17 +1198,30 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   const SizedBox(width: 10.0),
                   Expanded(
                     child: TextButton(
-                      onPressed: () => {
-                        retrieveData(),
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => const RetrievingData(),
-                        //   ),
-                        // ),
-                      },
+                      onPressed: (catchFiles.isNotEmpty ||
+                              !isDataRetrievalComplete)
+                          ? () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: catchFiles.isNotEmpty
+                                      ? const Text(
+                                          'Please upload the pending reports first.')
+                                      : const Text(
+                                          'Please wait until the data retrieval is complete.'),
+                                  backgroundColor: Colors.red,
+                                  showCloseIcon: true,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            } // Disable if pending reports exist or retrieval is in progress
+                          : () {
+                              retrieveData();
+                            },
                       style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D4694),
+                        backgroundColor:
+                            (catchFiles.isNotEmpty || !isDataRetrievalComplete)
+                                ? Colors.grey.shade400
+                                : const Color(0xFF1D4694),
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
@@ -1277,6 +1311,14 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         files.removeAt(index); // Remove from list
         // Trigger UI update
         (context as Element).markNeedsBuild();
+        // setState(() {
+        //   // Check which list contains the file and remove from that list
+        //   if (catchFiles.contains(file)) {
+        //     catchFiles.removeAt(index);
+        //   } else if (files.contains(file)) {
+        //     files.removeAt(index);
+        //   }
+        // });
       } catch (e) {
         print("Error deleting file: $e");
       }

@@ -759,7 +759,41 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
                                     ),
                                   ),
                             activeFilter == "pending"
-                                ? SizedBox()
+                                // ? SizedBox()
+                                ? PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      if (value == 'share') {
+                                        _shareFile(file as File);
+                                      }
+                                      // else if (value == 'delete') {
+                                      //   _deleteFile(file as File, index);
+                                      // }
+                                    },
+                                    itemBuilder: (BuildContext context) => [
+                                      const PopupMenuItem(
+                                        value: 'share',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.share,
+                                                color: Colors.blue),
+                                            SizedBox(width: 10),
+                                            Text('Share'),
+                                          ],
+                                        ),
+                                      ),
+                                      // const PopupMenuItem(
+                                      //   value: 'delete',
+                                      //   child: Row(
+                                      //     children: [
+                                      //       Icon(Icons.delete,
+                                      //           color: Color(0xFFb91c1c)),
+                                      //       SizedBox(width: 10),
+                                      //       Text('Delete'),
+                                      //     ],
+                                      //   ),
+                                      // ),
+                                    ],
+                                  )
                                 : PopupMenuButton<String>(
                                     onSelected: (value) {
                                       if (value == 'share') {
@@ -873,6 +907,14 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
         files.removeAt(index); // Remove from list
         // Trigger UI update
         (context as Element).markNeedsBuild();
+        // setState(() {
+        //   // Check which list contains the file and remove from that list
+        //   if (catchFiles.contains(file)) {
+        //     catchFiles.removeAt(index);
+        //   } else if (files.contains(file)) {
+        //     files.removeAt(index);
+        //   }
+        // });
       } catch (e) {
         print("Error deleting file: $e");
       }
