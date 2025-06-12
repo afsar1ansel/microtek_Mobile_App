@@ -92,11 +92,12 @@ class LogInContent extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: 20,
+                      left: 0,
+                      top: -60,
                       child: Image.asset(
                         'assets/logo0.png',
-                        height: 69,
-                        width: 120,
+                        height: 180,
+                        width: 170,
                       ),
                     ),
                   ],
