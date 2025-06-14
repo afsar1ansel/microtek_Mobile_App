@@ -315,7 +315,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
     // Get current date and time
     String formattedDateTime =
-        DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+        DateFormat('yyyy_MM_dd_HH_mm_ss').format(DateTime.now());
 
     // Generate filename with platform name and date-time
     fileName = "${widget.device?.platformName}_$formattedDateTime.csv";
