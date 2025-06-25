@@ -41,6 +41,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   bool _disconnectionDetected = false;
 
+  String _dataBuffer = ""; // Add this at the class level
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +53,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   Future<void> fetchCatchFiles() async {
     final cacheDir = Directory(
-        '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
+      '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache',
+    );
     List<FileSystemEntity> cache_files = [];
     final cacheFiles = cacheDir.listSync();
 
@@ -66,8 +69,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   }
 
   Future<void> fetchFiles() async {
-    final fetchedFiles =
-        await getFilesFromDirectory(widget.device?.platformName ?? '');
+    final fetchedFiles = await getFilesFromDirectory(
+      widget.device?.platformName ?? '',
+    );
     setState(() {
       files = fetchedFiles.where((file) {
         if (activeFilter == 'pdf') {
@@ -82,7 +86,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   }
 
   Future<List<FileSystemEntity>> getFilesFromDirectory(
-      String deviceName) async {
+    String deviceName,
+  ) async {
     Directory? directory = await getExternalStorageDirectory();
     Directory? downloadsDirectory = await getDownloadsDirectory();
 
@@ -134,7 +139,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         if (await file.exists()) {
           final fileName = path.split('/').last;
           final cacheDir = Directory(
-              '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache');
+            '/storage/emulated/0/Android/data/com.microtek.eyetracker/cache',
+          );
 
           // Ensure the cache directory exists
           if (!await cacheDir.exists()) {
@@ -193,7 +199,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
     try {
       await device.connect(
-          autoConnect: false, timeout: const Duration(seconds: 15));
+        autoConnect: false,
+        timeout: const Duration(seconds: 15),
+      );
       discoverServices();
     } catch (e) {
       setState(() {
@@ -219,36 +227,38 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
             rxCharacteristic = char;
             rxCharacteristic!.setNotifyValue(true);
             _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) {
-              if (!mounted) return; // Check if the widget is still mounted
+              if (!mounted) return;
               String receivedData = String.fromCharCodes(value);
-              setState(() {
-                print("Received: $receivedData");
-                messages.add("Received: $receivedData");
-                _retrievedData = _retrievedData! + receivedData;
-                // print(_retrievedData);
+              _dataBuffer += receivedData; // Buffer data outside setState
 
-                // Check for "NO RECORDS" and trigger sendData() after 1 minute
-                if (_retrievedData!.trim() == "NO RECORDS") {
+              // Only update UI when a complete message is received
+              if (_dataBuffer.contains("END") ||
+                  _dataBuffer.trim() == "NO RECORDS") {
+                setState(() {
+                  messages.add("Received: $_dataBuffer");
+                  _retrievedData = _dataBuffer;
+                });
+
+                if (_dataBuffer.trim() == "NO RECORDS") {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          'No Records Found. Please wait for 1 minute before Retirving Data...'),
+                        'No Records Found. Please wait for 1 minute before Retirving Data...',
+                      ),
                       backgroundColor: Color(0xFF203344),
                       showCloseIcon: true,
-                      behavior:
-                          SnackBarBehavior.floating, // Make it float on top
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                   isDataRetrievalComplete = true;
-                  Navigator.of(context).pop(); // Close the dialog
-                }
-                // Check if the received data indicates the end of transmission
-                if (_retrievedData!.contains("END")) {
+                  Navigator.of(context).pop();
+                } else if (_dataBuffer.contains("END")) {
                   isDataRetrievalComplete = true;
-                  convertAndSaveCSV(); // Automatically convert and save CSV
-                  Navigator.of(context).pop(); // Close the dialog
+                  convertAndSaveCSV();
+                  Navigator.of(context).pop();
                 }
-              });
+                _dataBuffer = ""; // Reset buffer after processing
+              }
             });
           }
         }
@@ -306,7 +316,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       ...allData.map(
         (map) =>
             headers.map((header) => (map[header] ?? "").toString()).toList(),
-      )
+      ),
     ];
 
     String csvString = const ListToCsvConverter().convert(csvData);
@@ -314,8 +324,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     final directory = await getExternalStorageDirectory();
 
     // Get current date and time
-    String formattedDateTime =
-        DateFormat('yyyy_MM_dd_HH_mm_ss').format(DateTime.now());
+    String formattedDateTime = DateFormat(
+      'yyyy_MM_dd_HH_mm_ss',
+    ).format(DateTime.now());
 
     // Generate filename with platform name and date-time
     fileName = "${widget.device?.platformName}_$formattedDateTime.csv";
@@ -358,7 +369,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Device is not connected. Please ensure it is powered on and in range.'),
+            'Device is not connected. Please ensure it is powered on and in range.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -395,7 +407,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                      'Please keep the device close during data transfer.'),
+                    'Please keep the device close during data transfer.',
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -403,8 +416,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                         _isDeviceConnected
                             ? Icons.bluetooth_connected
                             : Icons.bluetooth_disabled,
-                        color:
-                            _isDeviceConnected ? Color(0xFF1D4694) : Colors.red,
+                        color: _isDeviceConnected
+                            ? Color(0xFF1D4694)
+                            : Colors.red,
                         size: 14,
                       ),
                       const SizedBox(width: 10),
@@ -454,7 +468,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Data Deleted Successfully. Please wait for 1 minute before Retirving Data...'),
+            'Data Deleted Successfully. Please wait for 1 minute before Retirving Data...',
+          ),
           backgroundColor: Color(0xFF203344),
           showCloseIcon: true,
           behavior: SnackBarBehavior.floating, // Make it float on top
@@ -470,10 +485,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         return AlertDialog(
           title: const Text(
             'Warning!',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
           ),
           content: const Text(
             'Please note that starting the test will erase all data currently stored in the MET Device. Are you sure you want to delete the data and Start the test?',
@@ -543,30 +555,32 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  SizedBox(
-                    height: 12.0,
-                  ),
+                  SizedBox(height: 12.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Select date and time range',
                         style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Text("Done"),
                     ],
                   ),
-                  const Divider(
-                    height: 16,
-                  ),
+                  const Divider(height: 16),
                   // From Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      const Text('Start time',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Start time',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Spacer(),
                       // Select Date Button
                       TextButton(
@@ -597,9 +611,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                               : 'Select Date',
                         ),
                       ),
-                      const SizedBox(
-                        width: 10.0,
-                      ),
+                      const SizedBox(width: 10.0),
                       // Select Time Button
                       TextButton(
                         onPressed: () async {
@@ -629,17 +641,19 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                       ),
                     ],
                   ),
-                  const Divider(
-                    height: 16,
-                  ),
+                  const Divider(height: 16),
 
                   // To Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      const Text('End time',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'End time',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Spacer(),
                       // Select Date Button
                       TextButton(
@@ -670,9 +684,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                               : 'Select Date',
                         ),
                       ),
-                      const SizedBox(
-                        width: 10.0,
-                      ),
+                      const SizedBox(width: 10.0),
                       // Select Time Button
                       TextButton(
                         onPressed: () async {
@@ -734,7 +746,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                  'Please select both From and To dates and times.'),
+                                'Please select both From and To dates and times.',
+                              ),
                             ),
                           );
                         }
@@ -782,10 +795,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
           children: [
             Text(
               widget.device?.platformName ?? 'Mesha BT Device',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -808,10 +818,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
               // Pending Reports Section
               const Text(
                 'Pending Reports',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
               ),
               ListView.builder(
                 shrinkWrap: true,
@@ -882,8 +889,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                             SizedBox(
                               width: 35,
                               child: IconButton(
-                                icon: Icon(Icons.cloud_off_rounded,
-                                    color: Colors.red),
+                                icon: Icon(
+                                  Icons.cloud_off_rounded,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () {},
                               ),
                             ),
@@ -936,10 +945,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 children: [
                   const Text(
                     'Reports Generated',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                   ),
                   IconButton(
                     onPressed: () {
@@ -1096,8 +1102,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                             SizedBox(
                               width: 30,
                               child: IconButton(
-                                icon: Icon(Icons.cloud_done_rounded,
-                                    color: Colors.green),
+                                icon: Icon(
+                                  Icons.cloud_done_rounded,
+                                  color: Colors.green,
+                                ),
                                 onPressed: () {},
                               ),
                             ),
@@ -1124,8 +1132,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                                   value: 'delete',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.delete,
-                                          color: Color(0xFFb91c1c)),
+                                      Icon(
+                                        Icons.delete,
+                                        color: Color(0xFFb91c1c),
+                                      ),
                                       SizedBox(width: 10),
                                       Text('Delete'),
                                     ],
@@ -1148,10 +1158,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(
-              color: Colors.grey.shade300,
-              width: 1.0,
-            ),
+            top: BorderSide(color: Colors.grey.shade300, width: 1.0),
           ),
         ),
         child: Padding(
@@ -1161,16 +1168,11 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
             children: [
               Text(
                 '${files.length} reports generated.',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               Text(
                 'Cloud data will be archived and deleted after 30 days.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: const Color(0xFF848F8B),
-                ),
+                style: TextStyle(fontSize: 12, color: const Color(0xFF848F8B)),
               ),
               const SizedBox(height: 8.0),
               Row(
@@ -1198,16 +1200,18 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   const SizedBox(width: 10.0),
                   Expanded(
                     child: TextButton(
-                      onPressed: (catchFiles.isNotEmpty ||
-                              !isDataRetrievalComplete)
+                      onPressed:
+                          (catchFiles.isNotEmpty || !isDataRetrievalComplete)
                           ? () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: catchFiles.isNotEmpty
                                       ? const Text(
-                                          'Please upload the pending reports first.')
+                                          'Please upload the pending reports first.',
+                                        )
                                       : const Text(
-                                          'Please wait until the data retrieval is complete.'),
+                                          'Please wait until the data retrieval is complete.',
+                                        ),
                                   backgroundColor: Colors.red,
                                   showCloseIcon: true,
                                   behavior: SnackBarBehavior.floating,
@@ -1220,8 +1224,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                       style: TextButton.styleFrom(
                         backgroundColor:
                             (catchFiles.isNotEmpty || !isDataRetrievalComplete)
-                                ? Colors.grey.shade400
-                                : const Color(0xFF1D4694),
+                            ? Colors.grey.shade400
+                            : const Color(0xFF1D4694),
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
@@ -1254,9 +1258,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       final result = await OpenFile.open(file.path);
       if (result.type != ResultType.done) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open file: ${file.path}'),
-          ),
+          SnackBar(content: Text('Could not open file: ${file.path}')),
         );
       }
     }
@@ -1298,11 +1300,12 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   // Function to share the file
   void _shareFile(File file) {
-    Share.shareXFiles([XFile(file.path)],
-        text: 'Check out this file: ${file.path.split('/').last}');
+    Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'Check out this file: ${file.path.split('/').last}');
   }
 
-// Function to delete the file
+  // Function to delete the file
   void _deleteFile(File file, int index) async {
     bool confirmDelete = await _showDeleteConfirmationDialog();
     if (confirmDelete) {
@@ -1325,7 +1328,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     }
   }
 
-// Function to show confirmation dialog before deleting
+  // Function to show confirmation dialog before deleting
   Future<bool> _showDeleteConfirmationDialog() async {
     return await showDialog<bool>(
           context: context,
@@ -1339,8 +1342,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child:
-                    const Text('Delete', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
