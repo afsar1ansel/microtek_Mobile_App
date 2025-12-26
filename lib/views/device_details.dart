@@ -496,28 +496,52 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   }
 
   /// Send *DELETE$ Command
+  // void deleteData() {
+  //   _retrievedData = "";
+  //   sendData("*DELETE\$"); // First delete command
+  //   setState(() {
+  //     isDeleteConfirmed = !isDeleteConfirmed; // Toggle the button text
+  //   });
+  //   Future.delayed(const Duration(milliseconds: 500), () {
+  //     sendData("*DELETE\$"); // Second delete command after a short delay
+  //     setState(() {
+  //       isDeleteConfirmed = !isDeleteConfirmed; // Toggle the button text
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(
+  //           'Data Deleted Successfully. Please wait for 1 minute before Retirving Data...',
+  //         ),
+  //         backgroundColor: Color(0xFF203344),
+  //         showCloseIcon: true,
+  //         behavior: SnackBarBehavior.floating, // Make it float on top
+  //       ),
+  //     );
+  //   });
+  // }
+
   void deleteData() {
+    if (!_isDeviceConnected) return;
+
     _retrievedData = "";
-    sendData("*DELETE\$"); // First delete command
+    sendData("*START\$");
+
+    if (!mounted) return;
+
     setState(() {
-      isDeleteConfirmed = !isDeleteConfirmed; // Toggle the button text
+      isDeleteConfirmed = false;
     });
-    Future.delayed(const Duration(milliseconds: 500), () {
-      sendData("*DELETE\$"); // Second delete command after a short delay
-      setState(() {
-        isDeleteConfirmed = !isDeleteConfirmed; // Toggle the button text
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Data Deleted Successfully. Please wait for 1 minute before Retirving Data...',
-          ),
-          backgroundColor: Color(0xFF203344),
-          showCloseIcon: true,
-          behavior: SnackBarBehavior.floating, // Make it float on top
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Process started successfully. Please wait before retrieving data.',
         ),
-      );
-    });
+        backgroundColor: Color(0xFF203344),
+        showCloseIcon: true,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void openDeleteDataDialog() {

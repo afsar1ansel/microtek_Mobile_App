@@ -14,6 +14,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:microtek_mobile_app/bluetooth/ble_auto_dt_sync.dart';
+
 class BluetoothDeviceManager extends StatefulWidget {
   const BluetoothDeviceManager({super.key});
 
@@ -960,6 +962,7 @@ class DeviceCard extends StatefulWidget {
 class _DeviceCardState extends State<DeviceCard> {
   bool _isConnected = false;
   bool _isConnecting = false;
+  final BleAutoDateTimeSync _bleDtSync = BleAutoDateTimeSync();
 
   @override
   void initState() {
@@ -982,16 +985,17 @@ class _DeviceCardState extends State<DeviceCard> {
     });
 
     try {
-      await widget.device?.connect();
+      _bleDtSync.reset();
+      await _bleDtSync.connectAndSyncTime(widget.device!);
       setState(() {
         _isConnected = true;
         _isConnecting = false;
       });
     } catch (e) {
-      print("Failed to connect: $e");
       setState(() {
         _isConnecting = false;
       });
+      debugPrint("Connection failed: $e");
     }
   }
 
