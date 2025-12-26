@@ -42,6 +42,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   bool _disconnectionDetected = false;
 
   String _dataBuffer = ""; // Add this at the class level
+  String _liveRetrievingData = "";
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -77,7 +79,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         if (activeFilter == 'pdf') {
           return file.path.endsWith('.pdf'); // Show only PDF files
         } else if (activeFilter == 'csv') {
-          return file.path.endsWith('.csv'); // Show only CSV files
+          return file.path.endsWith('.csv') ||
+              file.path.endsWith('.txt'); // Show only CSV files
         }
         return false; // No other filters
       }).toList();
@@ -229,7 +232,16 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
             _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) {
               if (!mounted) return;
               String receivedData = String.fromCharCodes(value);
-              _dataBuffer += receivedData; // Buffer data outside setState
+              _dataBuffer += receivedData;
+              setState(() {
+                _liveRetrievingData = _dataBuffer; // <-- Add this line
+              });
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_scrollController.hasClients) {
+                  _scrollController
+                      .jumpTo(_scrollController.position.maxScrollExtent);
+                }
+              });
 
               // Only update UI when a complete message is received
               if (_dataBuffer.contains("END") ||
@@ -267,6 +279,21 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   }
 
   void convertAndSaveCSV() async {
+    // Save raw data to a text file before processing
+    try {
+      final directory = await getExternalStorageDirectory();
+      String formattedDateTime =
+          DateFormat('yyyy_MM_dd_HH_mm_ss').format(DateTime.now());
+      String rawFileName =
+          "${widget.device?.platformName}_$formattedDateTime.txt";
+      final rawFilePath = "${directory?.path}/$rawFileName";
+      final rawFile = File(rawFilePath);
+      await rawFile.writeAsString(_retrievedData ?? "");
+      print("Raw data saved at: $rawFilePath");
+    } catch (e) {
+      print("Error saving raw data: $e");
+    }
+
     try {
       final isPathEmpaty = await storage.read(key: 'csvFilePath');
       print('Test Path: $isPathEmpaty');
@@ -398,6 +425,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 timer.cancel();
                 Navigator.of(context).pop();
                 _navigateToDisconnectionPage();
+              } else {
+                // Update dialog with latest data
+                setState(() {});
               }
             });
 
@@ -416,9 +446,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                         _isDeviceConnected
                             ? Icons.bluetooth_connected
                             : Icons.bluetooth_disabled,
-                        color: _isDeviceConnected
-                            ? Color(0xFF1D4694)
-                            : Colors.red,
+                        color:
+                            _isDeviceConnected ? Color(0xFF1D4694) : Colors.red,
                         size: 14,
                       ),
                       const SizedBox(width: 10),
@@ -434,8 +463,21 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                       ),
                     ],
                   ),
+                  // const SizedBox(height: 20),
+                  // const CircularProgressIndicator(),
                   const SizedBox(height: 20),
-                  const CircularProgressIndicator(),
+                  // Show live data here
+                  SizedBox(
+                    height: 100,
+                    child: SingleChildScrollView(
+                      controller: _scrollController, // <-- Add this line
+                      child: Text(
+                        _liveRetrievingData,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black87),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               actions: [
@@ -780,6 +822,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _rxSubscription?.cancel();
     _connectionSubscription?.cancel();
     super.dispose();
@@ -1200,8 +1243,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   const SizedBox(width: 10.0),
                   Expanded(
                     child: TextButton(
-                      onPressed:
-                          (catchFiles.isNotEmpty || !isDataRetrievalComplete)
+                      onPressed: (catchFiles.isNotEmpty ||
+                              !isDataRetrievalComplete)
                           ? () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1224,8 +1267,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                       style: TextButton.styleFrom(
                         backgroundColor:
                             (catchFiles.isNotEmpty || !isDataRetrievalComplete)
-                            ? Colors.grey.shade400
-                            : const Color(0xFF1D4694),
+                                ? Colors.grey.shade400
+                                : const Color(0xFF1D4694),
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
