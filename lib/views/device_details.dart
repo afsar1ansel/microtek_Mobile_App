@@ -45,6 +45,11 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   String _liveRetrievingData = "";
   ScrollController _scrollController = ScrollController();
 
+  // Dialog/timer state for retrieval UI
+  Timer? _retrievingDialogTimer;
+  ValueNotifier<String> _dialogLiveData = ValueNotifier('');
+  bool _isRetrievingDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -228,50 +233,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
           if (char.uuid == Guid("0000FFF1-0000-1000-8000-00805F9B34FB") &&
               (char.properties.notify || char.properties.read)) {
             rxCharacteristic = char;
-            rxCharacteristic!.setNotifyValue(true);
-            _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) {
-              if (!mounted) return;
-              String receivedData = String.fromCharCodes(value);
-              _dataBuffer += receivedData;
-              setState(() {
-                _liveRetrievingData = _dataBuffer; // <-- Add this line
-              });
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (_scrollController.hasClients) {
-                  _scrollController
-                      .jumpTo(_scrollController.position.maxScrollExtent);
-                }
-              });
-
-              // Only update UI when a complete message is received
-              if (_dataBuffer.contains("END") ||
-                  _dataBuffer.trim() == "NO RECORDS") {
-                setState(() {
-                  messages.add("Received: $_dataBuffer");
-                  _retrievedData = _dataBuffer;
-                });
-
-                if (_dataBuffer.trim() == "NO RECORDS") {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'No Records Found. Please wait for 1 minute before Retirving Data...',
-                      ),
-                      backgroundColor: Color(0xFF203344),
-                      showCloseIcon: true,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  isDataRetrievalComplete = true;
-                  Navigator.of(context).pop();
-                } else if (_dataBuffer.contains("END")) {
-                  isDataRetrievalComplete = true;
-                  convertAndSaveCSV();
-                  Navigator.of(context).pop();
-                }
-                _dataBuffer = ""; // Reset buffer after processing
-              }
-            });
+            // Do NOT enable notifications here. Notifications will be enabled
+            // only when the user explicitly starts data retrieval (see
+            // `retrieveData`) to avoid automatic device streaming when the
+            // page is opened or revisited.
           }
         }
       }
@@ -371,15 +336,22 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         behavior: SnackBarBehavior.floating, // Make it float on top
       ),
     );
-    deleteData();
-    if (mounted) {
-      await storage.write(key: 'pageIndex', value: '0');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SystemDetails(device: widget.device),
-        ),
-      );
+    // deleteData();
+    if (!mounted) return;
+
+    await storage.write(key: 'pageIndex', value: '0');
+    // Stop BLE notifications and subscriptions immediately before navigation
+    await stopBleListening();
+
+    final route = MaterialPageRoute(
+      builder: (context) => SystemDetails(device: widget.device),
+    );
+
+    // If there is a route to replace, use pushReplacement; otherwise push
+    if (Navigator.of(context).canPop()) {
+      Navigator.pushReplacement(context, route);
+    } else {
+      Navigator.push(context, route);
     }
   }
 
@@ -404,92 +376,181 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       return;
     }
 
-    _retrievedData = "";
-    _disconnectionDetected = false;
-    isDataRetrievalComplete = false;
+    if (rxCharacteristic == null || txCharacteristic == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device characteristics not available.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    sendData("*GET\$");
-    _showRetrievingDataDialog();
+    try {
+      // Ensure previous subscriptions/timers are cleared
+      await _rxSubscription?.cancel();
+      _retrievingDialogTimer?.cancel();
+
+      // Enable notifications and subscribe to incoming data
+      await rxCharacteristic!.setNotifyValue(true);
+      _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) async {
+        if (!mounted) return;
+        String receivedData = String.fromCharCodes(value);
+        _dataBuffer += receivedData;
+
+        // Update dialog content via ValueNotifier
+        _dialogLiveData.value = _dataBuffer;
+        _liveRetrievingData = _dataBuffer;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController
+                .jumpTo(_scrollController.position.maxScrollExtent);
+          }
+        });
+
+        // Only update UI and close dialog when a complete message is received
+        if (_dataBuffer.contains("END") || _dataBuffer.trim() == "NO RECORDS") {
+          // Stop the dialog timer and close the dialog safely
+          _retrievingDialogTimer?.cancel();
+          _isRetrievingDialogOpen = false;
+
+          // Update parent UI
+          setState(() {
+            messages.add("Received: $_dataBuffer");
+            _retrievedData = _dataBuffer;
+          });
+
+          // Ensure we pop the retrieval dialog only if it is shown
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+
+          if (_dataBuffer.trim() == "NO RECORDS") {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'No Records Found. Please wait for 1 minute before Retirving Data...',
+                ),
+                backgroundColor: Color(0xFF203344),
+                showCloseIcon: true,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            isDataRetrievalComplete = true;
+          } else if (_dataBuffer.contains("END")) {
+            isDataRetrievalComplete = true;
+            // Save CSV and navigate only when widget is still mounted
+            convertAndSaveCSV();
+          }
+
+          _dataBuffer = ""; // Reset buffer after processing
+        }
+      });
+
+      _retrievedData = "";
+      _disconnectionDetected = false;
+      isDataRetrievalComplete = false;
+
+      // Show the dialog after subscription is active
+      _showRetrievingDataDialog();
+
+      // Send command to request data
+      sendData("*GET\$");
+    } catch (e) {
+      print('Error starting data retrieval: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to start data retrieval.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showRetrievingDataDialog() {
+    // Mark dialog as open and ensure any previous timer is cancelled
+    _isRetrievingDialogOpen = true;
+    _dialogLiveData.value = _dataBuffer;
+    _retrievingDialogTimer?.cancel();
+
+    // Timer to monitor connection status and close dialog on disconnection
+    _retrievingDialogTimer =
+        Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isDeviceConnected || _disconnectionDetected) {
+        timer.cancel();
+        _isRetrievingDialogOpen = false;
+        _retrievingDialogTimer = null;
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        _navigateToDisconnectionPage();
+      }
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Periodically check connection status
-            Timer.periodic(const Duration(seconds: 1), (timer) {
-              if (!_isDeviceConnected || _disconnectionDetected) {
-                timer.cancel();
-                Navigator.of(context).pop();
-                _navigateToDisconnectionPage();
-              } else {
-                // Update dialog with latest data
-                setState(() {});
-              }
-            });
-
-            return AlertDialog(
-              title: const Text('Retrieving Data'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Retrieving Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Please keep the device close during data transfer.'),
+              const SizedBox(height: 20),
+              Row(
                 children: [
-                  const Text(
-                    'Please keep the device close during data transfer.',
+                  Icon(
+                    _isDeviceConnected
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
+                    color: _isDeviceConnected
+                        ? const Color(0xFF1D4694)
+                        : Colors.red,
+                    size: 14,
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Icon(
-                        _isDeviceConnected
-                            ? Icons.bluetooth_connected
-                            : Icons.bluetooth_disabled,
-                        color:
-                            _isDeviceConnected ? Color(0xFF1D4694) : Colors.red,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        _isDeviceConnected
-                            ? 'Device Connected'
-                            : 'Device Disconnected',
-                        style: TextStyle(
-                          color: _isDeviceConnected
-                              ? Color(0xFF1D4694)
-                              : Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // const SizedBox(height: 20),
-                  // const CircularProgressIndicator(),
-                  const SizedBox(height: 20),
-                  // Show live data here
-                  SizedBox(
-                    height: 100,
-                    child: SingleChildScrollView(
-                      controller: _scrollController, // <-- Add this line
-                      child: Text(
-                        _liveRetrievingData,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black87),
-                      ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _isDeviceConnected
+                        ? 'Device Connected'
+                        : 'Device Disconnected',
+                    style: TextStyle(
+                      color: _isDeviceConnected
+                          ? const Color(0xFF1D4694)
+                          : Colors.red,
                     ),
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 100,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: ValueListenableBuilder<String>(
+                    valueListenable: _dialogLiveData,
+                    builder: (context, value, child) {
+                      return Text(
+                        value,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black87),
+                      );
+                    },
+                  ),
                 ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                _retrievingDialogTimer?.cancel();
+                _isRetrievingDialogOpen = false;
+                if (Navigator.of(dialogContext).canPop())
+                  Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
         );
       },
     );
@@ -844,11 +905,49 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     );
   }
 
+  /// Stop BLE notifications and cancel subscriptions
+  Future<void> stopBleListening() async {
+    try {
+      // Disable characteristic notifications if set
+      if (rxCharacteristic != null) {
+        await rxCharacteristic!.setNotifyValue(false);
+      }
+    } catch (e) {
+      print('Error disabling notifications: $e');
+    }
+
+    try {
+      await _rxSubscription?.cancel();
+      _rxSubscription = null;
+    } catch (e) {
+      print('Error cancelling rx subscription: $e');
+    }
+
+    try {
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = null;
+    } catch (e) {
+      print('Error cancelling connection subscription: $e');
+    }
+
+    // Cancel and clear retrieval dialog timer/notifier if present
+    try {
+      _retrievingDialogTimer?.cancel();
+      _retrievingDialogTimer = null;
+      _isRetrievingDialogOpen = false;
+      _dialogLiveData.value = '';
+    } catch (e) {
+      print('Error cancelling retrieval dialog timer: $e');
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
-    _rxSubscription?.cancel();
-    _connectionSubscription?.cancel();
+    // Ensure BLE listeners are stopped (non-blocking call)
+    stopBleListening();
+    _retrievingDialogTimer?.cancel();
+    _dialogLiveData.dispose();
     super.dispose();
   }
 
@@ -1352,13 +1451,18 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       await storage.write(key: "deviceId", value: fileName.split('_').first);
       await storage.write(key: "pageIndex", value: "0");
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SystemDetails(device: widget.device),
-          ),
-        );
+      if (!mounted) return;
+      // Ensure listeners are stopped before changing screens
+      await stopBleListening();
+
+      final route = MaterialPageRoute(
+        builder: (context) => SystemDetails(device: widget.device),
+      );
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.pushReplacement(context, route);
+      } else {
+        Navigator.push(context, route);
       }
     } catch (e) {
       print("Error uploading file to cloud: $e");
