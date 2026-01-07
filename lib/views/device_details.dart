@@ -394,8 +394,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       // Enable notifications and subscribe to incoming data
       await rxCharacteristic!.setNotifyValue(true);
       _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) async {
+        print('value: $value');
         if (!mounted) return;
         String receivedData = String.fromCharCodes(value);
+        print('receivedData: $receivedData');
         _dataBuffer += receivedData;
 
         // Update dialog content via ValueNotifier
@@ -410,7 +412,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         });
 
         // Only update UI and close dialog when a complete message is received
-        if (_dataBuffer.contains("END") || _dataBuffer.trim() == "NO RECORDS") {
+        if (_dataBuffer.contains("END") || _dataBuffer.trim() == "") {
           // Stop the dialog timer and close the dialog safely
           _retrievingDialogTimer?.cancel();
           _isRetrievingDialogOpen = false;
@@ -426,7 +428,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
             Navigator.of(context).pop();
           }
 
-          if (_dataBuffer.trim() == "NO RECORDS") {
+          if (_dataBuffer.trim() == "") {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
@@ -437,6 +439,10 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 behavior: SnackBarBehavior.floating,
               ),
             );
+            isDataRetrievalComplete = true;
+          } else if (_dataBuffer.trim() == "END") {
+            print('No data received before END marker.');
+
             isDataRetrievalComplete = true;
           } else if (_dataBuffer.contains("END")) {
             isDataRetrievalComplete = true;

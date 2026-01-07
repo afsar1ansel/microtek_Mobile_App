@@ -10,6 +10,8 @@ class BleAutoDateTimeSync {
 
   bool _dtSent = false;
   StreamSubscription<List<int>>? _rxSub;
+  BluetoothCharacteristic?
+      _rxChar; // keep a reference so we can disable notifications later
 
   /// Build *DT=ddMMyyyyHHmmss$ command
   String _buildDtCommand() {
@@ -19,7 +21,13 @@ class BleAutoDateTimeSync {
   }
 
   /// Connect → discover → send DT → listen for ACK (if any)
-  Future<void> connectAndSyncTime(BluetoothDevice device) async {
+  ///
+  /// stopAfterWrite: when true (default), stop listening and disable RX
+  /// notifications immediately after a successful write. When false,
+  /// keep the notification subscription active to wait for an ACK from the
+  /// device.
+  Future<void> connectAndSyncTime(BluetoothDevice device,
+      {bool stopAfterWrite = true}) async {
     try {
       debugPrint("🔵 BLE: Connecting to device...");
       await device.connect(
@@ -55,11 +63,22 @@ class BleAutoDateTimeSync {
 
       // Enable RX notify if available (for ACK)
       if (rxChar != null) {
+        _rxChar = rxChar; // keep reference for stopping later
         await rxChar.setNotifyValue(true);
-        _listenForAck(rxChar);
+        // Only attach the ACK listener if we plan to wait for an ACK.
+        if (!stopAfterWrite) {
+          _listenForAck(rxChar);
+        }
       }
 
       await _sendDt(txChar);
+
+      // If requested, stop listening immediately after a successful write
+      if (stopAfterWrite) {
+        debugPrint(
+            "🛑 stopAfterWrite=true — stopping RX listener immediately after DT write");
+        await stopListening();
+      }
     } catch (e) {
       debugPrint("❌ BLE DT Sync failed: $e");
       rethrow;
@@ -67,6 +86,8 @@ class BleAutoDateTimeSync {
   }
 
   /// Send DT only once per connection
+  /// Send DT and optionally return right away. Use `stopListening()` to
+  /// stop notifications/subscription when you no longer want to listen for ACK.
   Future<void> _sendDt(BluetoothCharacteristic txChar) async {
     if (_dtSent) {
       debugPrint("⚠️ DT already sent, skipping");
@@ -88,10 +109,12 @@ class BleAutoDateTimeSync {
   }
 
   /// Listen for device ACK (optional)
-  void _listenForAck(BluetoothCharacteristic rxChar) {
+  void _listenForAck(BluetoothCharacteristic rxChar,
+      {bool stopAfterAck = true}) {
+    // Cancel any previous subscription first
     _rxSub?.cancel();
 
-    _rxSub = rxChar.lastValueStream.listen((value) {
+    _rxSub = rxChar.lastValueStream.listen((value) async {
       final response = String.fromCharCodes(value).trim();
 
       if (response.isEmpty) return;
@@ -103,8 +126,55 @@ class BleAutoDateTimeSync {
           response.contains("OK") ||
           response.contains("TIME")) {
         debugPrint("🎯 DT command acknowledged by device");
+
+        // If requested, stop listening after the ACK. We perform a fast-path
+        // cancellation of the subscription first so no additional events are
+        // delivered, then disable notifications on the characteristic.
+        if (stopAfterAck) {
+          // Cancel subscription immediately (fast path)
+          final sub = _rxSub;
+          _rxSub = null;
+          try {
+            await sub?.cancel();
+            debugPrint("🔕 Subscription cancelled immediately after ACK");
+          } catch (e) {
+            debugPrint("Error cancelling subscription immediately: $e");
+          }
+
+          // Disable notifications on the RX characteristic (async)
+          try {
+            if (_rxChar != null) {
+              await _rxChar!.setNotifyValue(false);
+              debugPrint("🔕 Notifications disabled on RX characteristic");
+              _rxChar = null;
+            }
+          } catch (e) {
+            debugPrint("Error disabling notifications after ACK: $e");
+          }
+        }
       }
     });
+  }
+
+  /// Stop listening to RX notifications and cancel the subscription.
+  /// Safe to call multiple times.
+  Future<void> stopListening() async {
+    debugPrint("🛑 Stopping DT ACK listener");
+    try {
+      if (_rxChar != null) {
+        await _rxChar!.setNotifyValue(false);
+        _rxChar = null;
+      }
+    } catch (e) {
+      debugPrint("Error disabling notifications: $e");
+    }
+
+    try {
+      await _rxSub?.cancel();
+    } catch (e) {
+      debugPrint("Error cancelling subscription: $e");
+    }
+    _rxSub = null;
   }
 
   /// Call before reconnecting
@@ -113,5 +183,6 @@ class BleAutoDateTimeSync {
     _dtSent = false;
     _rxSub?.cancel();
     _rxSub = null;
+    _rxChar = null;
   }
 }
