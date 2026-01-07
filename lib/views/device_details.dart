@@ -84,8 +84,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         if (activeFilter == 'pdf') {
           return file.path.endsWith('.pdf'); // Show only PDF files
         } else if (activeFilter == 'csv') {
-          return file.path.endsWith('.csv') ||
-              file.path.endsWith('.txt'); // Show only CSV files
+          return file.path.endsWith('.csv'); // Show only CSV files
+          // || file.path.endsWith('.txt');
         }
         return false; // No other filters
       }).toList();
@@ -245,19 +245,19 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   void convertAndSaveCSV() async {
     // Save raw data to a text file before processing
-    try {
-      final directory = await getExternalStorageDirectory();
-      String formattedDateTime =
-          DateFormat('yyyy_MM_dd_HH_mm_ss').format(DateTime.now());
-      String rawFileName =
-          "${widget.device?.platformName}_$formattedDateTime.txt";
-      final rawFilePath = "${directory?.path}/$rawFileName";
-      final rawFile = File(rawFilePath);
-      await rawFile.writeAsString(_retrievedData ?? "");
-      print("Raw data saved at: $rawFilePath");
-    } catch (e) {
-      print("Error saving raw data: $e");
-    }
+    // try {
+    //   final directory = await getExternalStorageDirectory();
+    //   String formattedDateTime =
+    //       DateFormat('yyyy_MM_dd_HH_mm_ss').format(DateTime.now());
+    //   String rawFileName =
+    //       "${widget.device?.platformName}_$formattedDateTime.txt";
+    //   final rawFilePath = "${directory?.path}/$rawFileName";
+    //   final rawFile = File(rawFilePath);
+    //   await rawFile.writeAsString(_retrievedData ?? "");
+    //   print("Raw data saved at: $rawFilePath");
+    // } catch (e) {
+    //   print("Error saving raw data: $e");
+    // }
 
     try {
       final isPathEmpaty = await storage.read(key: 'csvFilePath');
