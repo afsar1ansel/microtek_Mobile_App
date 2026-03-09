@@ -154,7 +154,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   String formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}'; // Customize the date and time format as needed
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year} '
+        '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _showDurationOptions(BuildContext context) async {

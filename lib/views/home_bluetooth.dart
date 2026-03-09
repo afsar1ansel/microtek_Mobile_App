@@ -178,7 +178,11 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
   }
 
   String formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}'; // Customize the date and time format as needed
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year} '
+        '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
   }
 
   // Future<void> _showDurationOptions(BuildContext context) async {
@@ -766,10 +770,9 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
                                     onSelected: (value) {
                                       if (value == 'share') {
                                         _shareFile(file as File);
+                                      } else if (value == 'delete') {
+                                        _deleteFile(file as File, index);
                                       }
-                                      // else if (value == 'delete') {
-                                      //   _deleteFile(file as File, index);
-                                      // }
                                     },
                                     itemBuilder: (BuildContext context) => [
                                       const PopupMenuItem(
@@ -783,17 +786,17 @@ class _BluetoothDeviceManagerState extends State<BluetoothDeviceManager> {
                                           ],
                                         ),
                                       ),
-                                      // const PopupMenuItem(
-                                      //   value: 'delete',
-                                      //   child: Row(
-                                      //     children: [
-                                      //       Icon(Icons.delete,
-                                      //           color: Color(0xFFb91c1c)),
-                                      //       SizedBox(width: 10),
-                                      //       Text('Delete'),
-                                      //     ],
-                                      //   ),
-                                      // ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                color: Color(0xFFb91c1c)),
+                                            SizedBox(width: 10),
+                                            Text('Delete'),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   )
                                 : PopupMenuButton<String>(

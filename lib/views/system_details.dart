@@ -22,6 +22,8 @@ class _SystemDetailsState extends State<SystemDetails> {
   final storage = const FlutterSecureStorage();
   final TextEditingController serviceRequestNumber = TextEditingController();
   final TextEditingController batterySerialController = TextEditingController();
+  final TextEditingController batterySerialController2 =
+      TextEditingController();
   String? batterySystem;
   bool _isScanning = false;
   bool _isValidating = false;
@@ -44,6 +46,7 @@ class _SystemDetailsState extends State<SystemDetails> {
     _debounceTimer?.cancel();
     serviceRequestNumber.dispose();
     batterySerialController.dispose();
+    batterySerialController2.dispose();
     super.dispose();
   }
 
@@ -58,6 +61,7 @@ class _SystemDetailsState extends State<SystemDetails> {
         "Service Request Number": serviceRequestNumber.text,
         "Battery System": batterySystem,
         "Battery Serial Number": batterySerialController.text,
+        "Battery Serial Number 2": batterySerialController2.text,
       };
       await storage.write(key: fileName, value: jsonEncode(formData));
     }
@@ -74,12 +78,20 @@ class _SystemDetailsState extends State<SystemDetails> {
           batterySystem = formData["Battery System"];
           batterySerialController.text =
               formData["Battery Serial Number"] ?? '';
+          batterySerialController2.text =
+              formData["Battery Serial Number 2"] ?? '';
         });
       }
     }
   }
 
   bool _areAllFieldsFilled() {
+    if (batterySystem == '24V') {
+      return serviceRequestNumber.text.isNotEmpty &&
+          batterySerialController.text.isNotEmpty &&
+          batterySerialController2.text.isNotEmpty &&
+          batterySystem != null;
+    }
     return serviceRequestNumber.text.isNotEmpty &&
         batterySerialController.text.isNotEmpty &&
         batterySystem != null;
@@ -102,7 +114,7 @@ class _SystemDetailsState extends State<SystemDetails> {
     });
   }
 
-  Future<void> _scanQRCode() async {
+  Future<void> _scanQRCode([TextEditingController? controller]) async {
     if (_isScanning) return;
     _isScanning = true;
 
@@ -116,7 +128,8 @@ class _SystemDetailsState extends State<SystemDetails> {
 
       if (scannedValue != null && mounted) {
         setState(() {
-          batterySerialController.text = scannedValue;
+          final targetController = controller ?? batterySerialController;
+          targetController.text = scannedValue;
           saveFormData(); // Save the scanned value
           if (_areAllFieldsFilled()) {
             _validateJobDetails();
@@ -149,83 +162,110 @@ class _SystemDetailsState extends State<SystemDetails> {
       });
 
       try {
-        final url = Uri.parse(
-          'https://microtek.cancrm.in/crm_api/getReplJobStatusDMS.php?'
-          'job_no=${serviceRequestNumber.text}&'
-          'old_serial=${batterySerialController.text}&'
-          'crm_eng_id=$_userId',
-        );
+        final serials = batterySystem == '24V'
+            ? [batterySerialController.text, batterySerialController2.text]
+            : [batterySerialController.text];
 
-        final response = await http.get(url);
-        if (response.statusCode == 200) {
-          final List<dynamic> responseData = json.decode(response.body);
-          if (responseData.isNotEmpty) {
-            final result = responseData.first;
-            if (result['res_code'] == 1) {
-              // Check for edge cases: Cancelled or Closed job status
-              if (result['job_status']?.toLowerCase() == 'cancel') {
-                setState(() {
-                  _isValidJob = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('The job has been cancelled.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-              } else if (result['job_status']?.toLowerCase() == 'closed') {
-                setState(() {
-                  _isValidJob = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('The job has been closed.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+        for (int i = 0; i < serials.length; i++) {
+          final serial = serials[i];
+          final url = Uri.parse(
+            'https://microtek.cancrm.in/crm_api/getReplJobStatusDMS.php?'
+            'job_no=${serviceRequestNumber.text}&'
+            'old_serial=${serial}&'
+            'crm_eng_id=$_userId',
+          );
+
+          final response = await http.get(url);
+          if (response.statusCode == 200) {
+            final List<dynamic> responseData = json.decode(response.body);
+            if (responseData.isNotEmpty) {
+              final result = responseData.first;
+              if (result['res_code'] == 1) {
+                if (result['job_status']?.toLowerCase() == 'cancel') {
+                  setState(() {
+                    _isValidJob = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('The job has been cancelled.'),
+                      backgroundColor: Colors.red,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                  return;
+                } else if (result['job_status']?.toLowerCase() == 'closed') {
+                  setState(() {
+                    _isValidJob = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('The job has been closed.'),
+                      backgroundColor: Colors.red,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                  return;
+                } else {
+                  // This serial is valid; continue to check others if any.
+                  continue;
+                }
               } else {
+                String errorMessage = result['res_msg'] ?? 'Invalid details';
+
+                String userFriendlyMessage;
+                if (errorMessage.toLowerCase().contains('job')) {
+                  userFriendlyMessage = 'Service Request Number is not valid';
+                } else if (errorMessage.toLowerCase().contains('serial')) {
+                  userFriendlyMessage =
+                      'Battery Serial Number ${i + 1} is not valid';
+                } else {
+                  userFriendlyMessage = errorMessage;
+                }
+
                 setState(() {
-                  _isValidJob = true;
+                  _isValidJob = false;
                 });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(userFriendlyMessage),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                return;
               }
             } else {
-              String errorMessage = result['res_msg'] ?? 'Invalid details';
-
-              String userFriendlyMessage;
-              if (errorMessage.toLowerCase().contains('job')) {
-                userFriendlyMessage = 'Service Request Number is not valid';
-              } else if (errorMessage.toLowerCase().contains('serial')) {
-                userFriendlyMessage = 'Battery Serial Number is not valid';
-              } else {
-                userFriendlyMessage = errorMessage;
-              }
-
               setState(() {
                 _isValidJob = false;
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(userFriendlyMessage),
+                  content: Text('Connection error. Please try again.'),
                   backgroundColor: Colors.red,
                   duration: Duration(seconds: 3),
                 ),
               );
+              return;
             }
+          } else {
+            setState(() {
+              _isValidJob = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Connection error. Please try again.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            return;
           }
-        } else {
-          setState(() {
-            _isValidJob = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Connection error. Please try again.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
         }
+
+        // All serials validated successfully.
+        setState(() {
+          _isValidJob = true;
+        });
       } catch (e) {
         setState(() {
           _isValidJob = false;
@@ -258,6 +298,8 @@ class _SystemDetailsState extends State<SystemDetails> {
           "customer_name": serviceRequestNumber.text,
           "battery_system": batterySystem,
           "batter_serial_no_1": batterySerialController.text,
+          if (batterySystem == '24V')
+            "batter_serial_no_2": batterySerialController2.text,
         };
 
         await saveFormData(); // Save data before proceeding
@@ -319,8 +361,17 @@ class _SystemDetailsState extends State<SystemDetails> {
                     batterySerialController,
                     required: true,
                     hasQrIcon: true,
-                    onQrPressed: _scanQRCode,
+                    onQrPressed: () => _scanQRCode(batterySerialController),
                   ),
+                  const SizedBox(height: 16),
+                  if (batterySystem == '24V')
+                    buildTextField(
+                      "Battery Serial Number 2*",
+                      batterySerialController2,
+                      required: true,
+                      hasQrIcon: true,
+                      onQrPressed: () => _scanQRCode(batterySerialController2),
+                    ),
                   const SizedBox(height: 16),
                   if (_isValidating)
                     const Column(
@@ -367,11 +418,16 @@ class _SystemDetailsState extends State<SystemDetails> {
           borderSide: BorderSide(color: Colors.grey.shade400),
         ),
       ),
-      items: ["12V"]
+      items: ["12V", "24V"]
           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
           .toList(),
       onChanged: (value) {
-        setState(() => batterySystem = value);
+        setState(() {
+          batterySystem = value;
+          if (value != '24V') {
+            batterySerialController2.clear();
+          }
+        });
         _onTextChanged();
       },
       validator: (value) =>
