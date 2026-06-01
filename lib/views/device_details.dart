@@ -47,6 +47,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   // Dialog/timer state for retrieval UI
   Timer? _retrievingDialogTimer;
+  Timer? _noDataTimer; // Timer to detect if no data arrives
   ValueNotifier<String> _dialogLiveData = ValueNotifier('');
   bool _isRetrievingDialogOpen = false;
 
@@ -394,11 +395,20 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
       // Ensure previous subscriptions/timers are cleared
       await _rxSubscription?.cancel();
       _retrievingDialogTimer?.cancel();
+      _noDataTimer?.cancel();
+
+      _dataBuffer = ""; // Reset buffer
+      _retrievedData = "";
 
       // Enable notifications and subscribe to incoming data
       await rxCharacteristic!.setNotifyValue(true);
-      _rxSubscription = rxCharacteristic!.lastValueStream.listen((value) async {
-        print('value: $value');
+      _rxSubscription = rxCharacteristic!.onValueReceived.listen((value) async {
+        if (value.isEmpty) return; // Ignore empty initial values
+
+        // Meaningful data received, cancel no-data timer
+        _noDataTimer?.cancel();
+
+        print('onValueReceived: $value');
         if (!mounted) return;
         String receivedData = String.fromCharCodes(value);
         print('receivedData: $receivedData');
@@ -416,23 +426,19 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         });
 
         // Only update UI and close dialog when a complete message is received
-        if (_dataBuffer.contains("END") || _dataBuffer.trim() == "") {
+        // Note: We no longer check for empty _dataBuffer here immediately
+        if (_dataBuffer.contains("END") && !isDataRetrievalComplete) {
           // Stop the dialog timer and close the dialog safely
           _retrievingDialogTimer?.cancel();
           _isRetrievingDialogOpen = false;
-
-          // Update parent UI
-          setState(() {
-            messages.add("Received: $_dataBuffer");
-            _retrievedData = _dataBuffer;
-          });
 
           // Ensure we pop the retrieval dialog only if it is shown
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
 
-          if (_dataBuffer.trim() == "") {
+          if (_dataBuffer.trim() == "END") {
+            print('No data received before END marker.');
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
@@ -443,13 +449,17 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            isDataRetrievalComplete = true;
-          } else if (_dataBuffer.trim() == "END") {
-            print('No data received before END marker.');
-
-            isDataRetrievalComplete = true;
-          } else if (_dataBuffer.contains("END")) {
-            isDataRetrievalComplete = true;
+            setState(() {
+              isDataRetrievalComplete = true;
+              messages.add("Received: $_dataBuffer");
+              _retrievedData = _dataBuffer;
+            });
+          } else {
+            setState(() {
+              isDataRetrievalComplete = true;
+              messages.add("Received: $_dataBuffer");
+              _retrievedData = _dataBuffer;
+            });
             // Save CSV and navigate only when widget is still mounted
             convertAndSaveCSV();
           }
@@ -458,12 +468,37 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         }
       });
 
-      _retrievedData = "";
       _disconnectionDetected = false;
       isDataRetrievalComplete = false;
 
       // Show the dialog after subscription is active
       _showRetrievingDataDialog();
+
+      // Start no-data timer - increased to 5 seconds for robustness
+      _noDataTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted && _dataBuffer.isEmpty && !isDataRetrievalComplete) {
+          // No data arrived within timeout
+          _retrievingDialogTimer?.cancel();
+          _isRetrievingDialogOpen = false;
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No Records Found. Please wait for 1 minute before Retirving Data...',
+              ),
+              backgroundColor: Color(0xFF203344),
+              showCloseIcon: true,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          setState(() {
+            isDataRetrievalComplete = true;
+          });
+        }
+      });
 
       // Send command to request data
       sendData("*GET\$");
@@ -944,6 +979,8 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     try {
       _retrievingDialogTimer?.cancel();
       _retrievingDialogTimer = null;
+      _noDataTimer?.cancel();
+      _noDataTimer = null;
       _isRetrievingDialogOpen = false;
       _dialogLiveData.value = '';
     } catch (e) {
